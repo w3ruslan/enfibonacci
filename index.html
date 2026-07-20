@@ -33,7 +33,8 @@
         .col-teams{flex:2;min-width:230px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
         .col-score{width:40px;text-align:center;color:var(--amber);font-weight:700}
         .col-goals{flex:1.7;color:var(--muted);font-size:10px;overflow:hidden;text-overflow:ellipsis}
-        .col-dna{width:170px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:10px}
+        .col-dna{width:200px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:10px}
+        .legend{font-size:10px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.6}
         .col-odds{width:170px;text-align:right;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
         .col-status{width:110px;text-align:center;font-weight:800;font-size:9px}
         .badge-draw{color:var(--amber)} .badge-no{color:var(--muted)}
@@ -114,6 +115,7 @@
             </div>
 
             <button class="btn-amber" onclick="renderList()">Filtreleri güncelle</button>
+            <div class="legend">🛡️ Kalkan vs Açık (+5) · 🧱 İki duvar (+3) · 📉 İkisi de az gollü (+2) · ⚖️ Net favori yok (+2) · 💹 Piyasa X'i görüyor (+2/+1) · 📊 Sıralama yakın (+1) — <b>5+ puan → BERABERE önerisi</b></div>
             <div id="stats" style="margin-top:15px;"></div>
             <div id="log"></div>
         </div>
@@ -153,24 +155,29 @@ function parseMatches(raw, isFixture){
     return results;
 }
 
-// --- DNA (mevcut yardımcı sistem) ---
-function solveRadicalDNA(o1, ox, o2, hStats, aStats){
-    let diff = Math.abs(o1 - o2), puan = 0;
-    if(ox <= 3.45) puan += 4;
-    if(diff <= 0.85) puan += 4;
-    if(ox < 3.05) puan += 2;
-    if(hStats.rank>aStats.rank && aStats.rank<=5 && aStats.rank>0 && hStats.avgGC<1.3) puan += 1;
-    if(hStats.avgGC<1.1 && aStats.avgGC<1.1 && hStats.played>0 && aStats.played>0) puan += 1;
-    return { decision:(puan>=5?'X':(o1<o2?'1':'2')), puan:Math.min(puan,10) };
-}
+// --- PROFİLLER ---
+function isKalkan(p, L){ return p.played>=3 && p.avgGS < L && p.avgGC < L; }   // az atan, az yiyen (duvar)
+function isAcik(p, L){ return p.played>=3 && p.avgGS > L && p.avgGC > L; }     // atan ama yiyen (açık)
 
-// --- BERABERLİK KALKANI ---
-function isKalkan(p, L){ return p.played>=3 && p.avgGS < L && p.avgGC < L; }
-function isAcik(p, L){ return p.played>=3 && p.avgGS > L && p.avgGC > L; }
-function drawShield(m){
-    const L=m.preL, H=m.preH, A=m.preA;
-    if(!H||!A||L<=0) return false;
-    return (isKalkan(H,L)&&isAcik(A,L)) || (isKalkan(A,L)&&isAcik(H,L));
+// --- DNA = BERABERLİK PUANI (antrenör mantığı) ---
+// 🛡️+5 Kalkan vs Açık · 🧱+3 iki duvar · 📉+2 ikisi de az gollü
+// ⚖️+2 net favori yok · 💹+2/+1 piyasa X'i görüyor · 📊+1 sıralama yakın
+function solveDNA(m, H, A, L){
+    const o1=m.od[0], ox=m.od[1], o2=m.od[2];
+    let puan=0, sig=[];
+    const kH=isKalkan(H,L), kA=isKalkan(A,L), aH=isAcik(H,L), aA=isAcik(A,L);
+    const shield = (kH&&aA)||(kA&&aH);
+
+    if(shield){ puan+=5; sig.push('🛡️'); }              // stil nötralizasyonu (en güçlü)
+    else if(kH&&kA){ puan+=3; sig.push('🧱'); }          // iki duvar → 0-0 eğilimi
+
+    if(L>0 && H.played>=3 && A.played>=3 && H.avgGS<L && A.avgGS<L){ puan+=2; sig.push('📉'); }
+    if(Math.abs(o1-o2)<=0.85){ puan+=2; sig.push('⚖️'); }
+    if(ox<=3.20){ puan+=2; sig.push('💹'); } else if(ox<=3.55){ puan+=1; sig.push('💹'); }
+    if(H.rank>0 && A.rank>0 && Math.abs(H.rank-A.rank)<=4){ puan+=1; sig.push('📊'); }
+
+    puan=Math.min(puan,10);
+    return { puan, sig:sig.join(''), shield, decision:(puan>=5 ? 'X' : (o1<o2?'1':'2')) };
 }
 
 function currentRank(team, table){
@@ -230,9 +237,9 @@ function renderList(){
     allMatches.forEach(m=>{
         const H=m.preH||{avgGS:0,avgGC:0,rank:0,played:0};
         const A=m.preA||{avgGS:0,avgGC:0,rank:0,played:0};
-        const dna = solveRadicalDNA(m.od[0], m.od[1], m.od[2], H, A);
-        const shield = drawShield(m);
-        const decision = shield ? 'X' : dna.decision;
+        const dna = solveDNA(m, H, A, m.preL||0);
+        const shield = dna.shield;
+        const decision = dna.decision;
 
         // filtreler
         if(fShield==='SHIELD' && !shield) return;
@@ -258,7 +265,7 @@ function renderList(){
                 <div class="col-teams">${shield?'🛡️ ':''}${m.h} (#${H.rank||'-'}) - ${m.a} (#${A.rank||'-'})</div>
                 <div class="col-score">${m.sc==='PENDING'?'?':m.sc}</div>
                 <div class="col-goals">LIG ${m.preN}m·${m.preL}g/m ┃ ${m.h.slice(0,3)} at${H.avgGS} ye${H.avgGC} ┃ ${m.a.slice(0,3)} at${A.avgGS} ye${A.avgGC}</div>
-                <div class="col-dna">Öneri: <b>${decision}</b> | Sonuç: ${m.sc==='PENDING'?'?':m.r} | dna${dna.puan}</div>
+                <div class="col-dna"><b>${decision}</b> ${dna.puan}/10 ${dna.sig} │ S:${m.sc==='PENDING'?'?':m.r}</div>
                 <div class="col-odds">1(${m.od[0]}) X(${m.od[1]}) 2(${m.od[2]})</div>
                 <div class="col-status">${sugg}</div>
             </div>`;
