@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enfibonacci v27.4</title>
+    <title>Enfibonacci v28 - Beraberlik Kalkanı</title>
     <style>
         :root{--bg:#0f1420;--card:#1a2233;--soft:#131a29;--line:#2a3550;--ink:#eaf0fb;--muted:#94a2bd;--accent:#6d86f0;--accent-soft:rgba(109,134,240,.16);--green:#22c55e;--red:#ef4444;--amber:#f59e0b;}
         *{box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px;margin:0}
-        .wrapper{max-width:1450px;margin:auto;border:1px solid var(--line);padding:20px;background:var(--card);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+        .wrapper{max-width:1500px;margin:auto;border:1px solid var(--line);padding:20px;background:var(--card);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
         h2{text-align:center;color:var(--ink);font-weight:700;border-bottom:1px solid var(--line);padding-bottom:12px;margin:0 0 16px}
         .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
         textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:1px solid var(--line);padding:10px;font-size:12px;border-radius:10px;box-sizing:border-box;resize:vertical;font-family:inherit}
@@ -21,7 +21,6 @@
         .filter-group{display:flex;flex-direction:column;gap:5px}
         .filter-group label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.3px}
 
-        /* TEK SATIR MATCH-ROW (kalınlık korunuyor) */
         .match-row{border-bottom:1px solid var(--line);padding:5px 10px;font-size:11px;display:flex;align-items:center;justify-content:space-between;transition:.15s;margin-bottom:2px;border-radius:6px;color:var(--ink);border-left:4px solid transparent;gap:10px;white-space:nowrap}
         .future-match{background:var(--accent-soft)!important;border-left:5px solid var(--accent)!important;font-weight:700}
         .win{background:rgba(34,197,94,.10)!important;border-left:4px solid var(--green)}
@@ -29,18 +28,21 @@
         .full-win{background:rgba(34,197,94,.30)!important;border-left:4px solid var(--green)}
         .full-loss{background:rgba(239,68,68,.30)!important;border-left:4px solid var(--red)}
         .draw-highlight{outline:1px solid var(--amber);outline-offset:-2px}
+        .shield-hit{border-left:5px solid var(--amber)!important;background:rgba(245,158,11,.12)!important}
 
-        .col-teams{flex:2;min-width:240px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
-        .col-score{width:44px;text-align:center;color:var(--amber);font-weight:700}
-        .col-goals{flex:1.7;color:var(--muted);font-style:normal;font-size:10px;overflow:hidden;text-overflow:ellipsis}
-        .col-dna{width:150px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line)}
-        .col-odds{width:180px;text-align:right;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
-        .col-status{width:80px;text-align:center;font-weight:800;font-size:9px}
+        .col-teams{flex:2;min-width:230px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+        .col-score{width:40px;text-align:center;color:var(--amber);font-weight:700}
+        .col-goals{flex:1.7;color:var(--muted);font-size:10px;overflow:hidden;text-overflow:ellipsis}
+        .col-dna{width:170px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line);font-size:10px}
+        .col-odds{width:170px;text-align:right;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+        .col-status{width:110px;text-align:center;font-weight:800;font-size:9px}
+        .badge-draw{color:var(--amber)} .badge-no{color:var(--muted)}
 
         input,select{background:var(--soft);color:var(--ink);border:1px solid var(--line);padding:7px;border-radius:8px;font-family:inherit;font-size:11px}
         input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
         #log{height:700px;overflow-y:auto;padding-right:5px;border-top:1px solid var(--line);margin-top:10px}
-        #stats{color:var(--ink);background:var(--soft);padding:12px;border-radius:10px;text-align:center;font-size:15px;border:1px solid var(--line);margin-bottom:10px;font-weight:600}
+        #stats{color:var(--ink);background:var(--soft);padding:12px;border-radius:10px;text-align:center;font-size:14px;border:1px solid var(--line);margin-bottom:10px;font-weight:600;line-height:1.7}
+        #stats .sh{color:var(--amber)}
         h4{margin:0 0 5px 0;font-size:11px;color:var(--muted);text-transform:uppercase}
         .odds-filter-container{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:var(--soft);padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:10px}
         .odds-sub-group{display:flex;flex-direction:column;gap:3px}
@@ -51,15 +53,15 @@
 <body>
 
 <div class="wrapper">
-    <h2>🧬 ENFIBONACCI v27.4</h2>
+    <h2>🛡️ ENFIBONACCI v28 — Beraberlik Kalkanı</h2>
 
     <div class="input-grid">
         <div>
-            <h4>1. Geçmiş maçlar</h4>
+            <h4>1. Geçmiş maçlar (en yeni üstte)</h4>
             <textarea id="pastInput" placeholder="Skorlu geçmiş maçları yapıştırın..."></textarea>
         </div>
         <div>
-            <h4>2. Fikstür</h4>
+            <h4>2. Fikstür (sıradaki maçlar)</h4>
             <textarea id="fixtureInput" placeholder="Gelecek maçları yapıştırın..."></textarea>
         </div>
     </div>
@@ -68,24 +70,31 @@
     <div class="grid">
         <div class="card">
             <div class="filter-grid">
-                <div class="filter-group" style="grid-column: span 2;">
-                    <label>Sonuç vurgulama (odak analizi)</label>
+                <div class="filter-group">
+                    <label>🛡️ Beraberlik Kalkanı</label>
+                    <select id="filter_shield" onchange="renderList()">
+                        <option value="ALL">Tüm maçlar</option>
+                        <option value="SHIELD">Sadece beraberlik adayları (Kalkan)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sonuç vurgulama</label>
                     <select id="filter_focus" onchange="renderList()">
-                        <option value="ALL">DNA odaklı görünüm</option>
-                        <option value="1">1 odaklı (1 bitenler yeşil)</option>
-                        <option value="X">X odaklı (X bitenler yeşil)</option>
-                        <option value="2">2 odaklı (2 bitenler yeşil)</option>
+                        <option value="ALL">Öneri odaklı (doğru=yeşil)</option>
+                        <option value="1">1 bitenler yeşil</option>
+                        <option value="X">X bitenler yeşil</option>
+                        <option value="2">2 bitenler yeşil</option>
                     </select>
                 </div>
             </div>
 
             <div class="filter-grid">
                 <div class="filter-group">
-                    <label>Sistem tahmini</label>
+                    <label>Öneri filtresi</label>
                     <select id="filter_prediction" onchange="renderList()">
                         <option value="ALL">Hepsi</option>
+                        <option value="X">Sadece BERABERE (X)</option>
                         <option value="1">Sadece 1</option>
-                        <option value="X">Sadece X</option>
                         <option value="2">Sadece 2</option>
                     </select>
                 </div>
@@ -99,21 +108,9 @@
             </div>
 
             <div class="odds-filter-container">
-                <div class="odds-sub-group">
-                    <label>1 (min/max)</label>
-                    <input type="number" id="f1_min" value="0.00" step="0.01">
-                    <input type="number" id="f1_max" value="99.0" step="0.01">
-                </div>
-                <div class="odds-sub-group">
-                    <label>X (min/max)</label>
-                    <input type="number" id="fx_min" value="0.00" step="0.01">
-                    <input type="number" id="fx_max" value="99.0" step="0.01">
-                </div>
-                <div class="odds-sub-group">
-                    <label>2 (min/max)</label>
-                    <input type="number" id="f2_min" value="0.00" step="0.01">
-                    <input type="number" id="f2_max" value="99.0" step="0.01">
-                </div>
+                <div class="odds-sub-group"><label>1 (min/max)</label><input type="number" id="f1_min" value="0.00" step="0.01"><input type="number" id="f1_max" value="99.0" step="0.01"></div>
+                <div class="odds-sub-group"><label>X (min/max)</label><input type="number" id="fx_min" value="0.00" step="0.01"><input type="number" id="fx_max" value="99.0" step="0.01"></div>
+                <div class="odds-sub-group"><label>2 (min/max)</label><input type="number" id="f2_min" value="0.00" step="0.01"><input type="number" id="f2_max" value="99.0" step="0.01"></div>
             </div>
 
             <button class="btn-amber" onclick="renderList()">Filtreleri güncelle</button>
@@ -126,152 +123,153 @@
 <script>
 let allMatches = [];
 let teamSet = new Set();
-let leagueTable = {};
-let leagueStats = { matches:0, goals:0, avgPerMatch:"0", avgPerTeam:"0" };
+let leagueFinal = { matches:0, avgPerMatch:"0" };
 
-function ultraClean(text) {
-    if (!text) return "";
-    return text
-        .replace(/Today|Yesterday|Round|B's|1X2|Today\s\d{2}:\d{2}/g, '')
-        .replace(/\d{2}\.\d{2}\.\s\d{2}:\d{2}/g, '')
-        .replace(/^\.|\.$/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+function ultraClean(text){
+    if(!text) return "";
+    return text.replace(/Today|Yesterday|Round|B's|1X2|Today\s\d{2}:\d{2}/g,'')
+        .replace(/\d{2}\.\d{2}\.\s\d{2}:\d{2}/g,'').replace(/^\.|\.$/g,'').replace(/\s+/g,' ').trim();
 }
 
-function solveRadicalDNA(o1, ox, o2, hStats, aStats, hRank, aRank) {
-    let diff = Math.abs(o1 - o2);
-    let puan = 0;
-    if (ox <= 3.45) puan += 4;
-    if (diff <= 0.85) puan += 4;
-    if (ox < 3.05) puan += 2;
-    if (hRank > aRank && aRank <= 5 && hStats && hStats.avgGC < 1.3) { puan += 1; }
-    if (hStats && aStats && hStats.avgGC < 1.1 && aStats.avgGC < 1.1) { puan += 1; }
-    return { decision: (puan >= 5 ? 'X' : (o1 < o2 ? '1' : '2')), puan: Math.min(puan, 10), diff };
-}
-
-function calculateStandings(matches) {
-    leagueTable = {};
-    let totMatches = 0, totGoals = 0;
-    teamSet.forEach(team => { leagueTable[team] = { points: 0, rank: 0, gs: 0, gc: 0, played: 0 }; });
-    matches.forEach(m => {
-        if (!m.fut && m.sc !== "PENDING") {
-            let s = m.sc.split(':');
-            let hG = parseInt(s[0]), aG = parseInt(s[1]);
-            if (!isNaN(hG) && !isNaN(aG)) {
-                totMatches++; totGoals += hG + aG;
-                leagueTable[m.h].gs += hG; leagueTable[m.h].gc += aG; leagueTable[m.h].played++;
-                leagueTable[m.a].gs += aG; leagueTable[m.a].gc += hG; leagueTable[m.a].played++;
-                if (hG > aG) leagueTable[m.h].points += 3;
-                else if (hG < aG) leagueTable[m.a].points += 3;
-                else { leagueTable[m.h].points += 1; leagueTable[m.a].points += 1; }
-            }
-        }
-    });
-    leagueStats = {
-        matches: totMatches, goals: totGoals,
-        avgPerMatch: totMatches ? (totGoals / totMatches).toFixed(2) : "0",
-        avgPerTeam: totMatches ? (totGoals / (totMatches * 2)).toFixed(2) : "0"
-    };
-    let sorted = Array.from(teamSet).sort((a,b) => (leagueTable[b].points - leagueTable[a].points) || (leagueTable[b].gs - leagueTable[b].gc) - (leagueTable[a].gs - leagueTable[a].gc) || a.localeCompare(b));
-    sorted.forEach((team, index) => {
-        leagueTable[team].rank = index + 1;
-        leagueTable[team].avgGS = leagueTable[team].played > 0 ? (leagueTable[team].gs / leagueTable[team].played).toFixed(1) : 0;
-        leagueTable[team].avgGC = leagueTable[team].played > 0 ? (leagueTable[team].gc / leagueTable[team].played).toFixed(1) : 0;
-    });
-}
-
-function parseMatches(raw, isFixture) {
+function parseMatches(raw, isFixture){
     const lines = raw.split(/\r?\n/);
     const results = [];
     const matchRegex = /^(?:.*?\d{2}:\d{2}\s+)?(.+?)\s+-\s+(.+?)(?:\s+(\d{1,2}\s*:\s*\d{1,2}))?\s+(?:(\d{1,2})\s+)?(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)/;
-    lines.forEach(line => {
-        let cleanLine = line.trim();
-        if (!cleanLine) return;
-        let match = cleanLine.match(matchRegex);
-        if (match) {
-            let home = ultraClean(match[1]); let away = ultraClean(match[2]);
-            let score = match[3] ? match[3].replace(/\s+/g, '') : "PENDING";
-            let o1 = parseFloat(match[5]), ox = parseFloat(match[6]), o2 = parseFloat(match[7]);
-            if (home && away && !isNaN(o1)) {
+    lines.forEach(line=>{
+        let cl = line.trim(); if(!cl) return;
+        let match = cl.match(matchRegex);
+        if(match){
+            let home=ultraClean(match[1]), away=ultraClean(match[2]);
+            let score = match[3] ? match[3].replace(/\s+/g,'') : "PENDING";
+            let o1=parseFloat(match[5]), ox=parseFloat(match[6]), o2=parseFloat(match[7]);
+            if(home && away && !isNaN(o1)){
                 teamSet.add(home); teamSet.add(away);
-                let actual = "PENDING";
-                if(!isFixture && score !== "PENDING") {
-                    let s = score.split(':');
-                    actual = (parseInt(s[0]) === parseInt(s[1])) ? 'X' : (parseInt(s[0]) > parseInt(s[1]) ? '1' : '2');
-                }
-                results.push({ h: home, a: away, sc: score, od: [o1, ox, o2], r: actual, fut: isFixture });
+                let actual="PENDING";
+                if(!isFixture && score!=="PENDING"){ let s=score.split(':'); actual=(parseInt(s[0])===parseInt(s[1]))?'X':(parseInt(s[0])>parseInt(s[1])?'1':'2'); }
+                results.push({ h:home, a:away, sc:score, od:[o1,ox,o2], r:actual, fut:isFixture });
             }
         }
     });
     return results;
 }
 
-function superParse() {
-    const pastRaw = document.getElementById('pastInput').value;
-    const fixtureRaw = document.getElementById('fixtureInput').value;
+// --- DNA (mevcut yardımcı sistem) ---
+function solveRadicalDNA(o1, ox, o2, hStats, aStats){
+    let diff = Math.abs(o1 - o2), puan = 0;
+    if(ox <= 3.45) puan += 4;
+    if(diff <= 0.85) puan += 4;
+    if(ox < 3.05) puan += 2;
+    if(hStats.rank>aStats.rank && aStats.rank<=5 && aStats.rank>0 && hStats.avgGC<1.3) puan += 1;
+    if(hStats.avgGC<1.1 && aStats.avgGC<1.1 && hStats.played>0 && aStats.played>0) puan += 1;
+    return { decision:(puan>=5?'X':(o1<o2?'1':'2')), puan:Math.min(puan,10) };
+}
+
+// --- BERABERLİK KALKANI ---
+function isKalkan(p, L){ return p.played>=3 && p.avgGS < L && p.avgGC < L; }
+function isAcik(p, L){ return p.played>=3 && p.avgGS > L && p.avgGC > L; }
+function drawShield(m){
+    const L=m.preL, H=m.preH, A=m.preA;
+    if(!H||!A||L<=0) return false;
+    return (isKalkan(H,L)&&isAcik(A,L)) || (isKalkan(A,L)&&isAcik(H,L));
+}
+
+function currentRank(team, table){
+    const teams = Object.keys(table).filter(t=>table[t].played>0);
+    teams.sort((a,b)=> (table[b].points-table[a].points) || ((table[b].gs-table[b].gc)-(table[a].gs-table[a].gc)) || a.localeCompare(b));
+    const idx = teams.indexOf(team);
+    return idx>=0 ? idx+1 : 0;
+}
+
+function superParse(){
     teamSet.clear();
-    const pastMatches = parseMatches(pastRaw, false);
-    calculateStandings(pastMatches);
-    // Moyenne de buts CUMULÉE "jusqu'à ce match" (du plus ancien = bas de la liste, vers le plus récent = haut)
-    let rg = 0, rm = 0;
-    for (let i = pastMatches.length - 1; i >= 0; i--) {
-        const mm = pastMatches[i];
-        if (mm.sc !== "PENDING") {
-            const s = mm.sc.split(':'), hg = parseInt(s[0]), ag = parseInt(s[1]);
-            if (!isNaN(hg) && !isNaN(ag)) { rg += hg + ag; rm++; }
+    const pastMatches = parseMatches(document.getElementById('pastInput').value, false);
+    const fixtureMatches = parseMatches(document.getElementById('fixtureInput').value, true);
+
+    // Tablo sıfır — kronolojik (en eski önce = listenin altından yukarı)
+    let table = {}; teamSet.forEach(t=> table[t]={gs:0,gc:0,played:0,points:0});
+    let totG=0, totM=0;
+    const snap = team=>{ const s=table[team]; return { played:s.played,
+        avgGS: s.played? +(s.gs/s.played).toFixed(2):0, avgGC: s.played? +(s.gc/s.played).toFixed(2):0,
+        rank: currentRank(team, table) }; };
+    const Lnow = ()=> totM? totG/(totM*2) : 0;
+
+    const chrono = [...pastMatches].reverse(); // en eski önce
+    chrono.forEach(m=>{
+        m.preH = snap(m.h); m.preA = snap(m.a);
+        m.preL = +Lnow().toFixed(2); m.preN = totM;
+        if(m.sc!=="PENDING"){ let s=m.sc.split(':'); let hg=parseInt(s[0]), ag=parseInt(s[1]);
+            if(!isNaN(hg)&&!isNaN(ag)){
+                table[m.h].gs+=hg; table[m.h].gc+=ag; table[m.h].played++;
+                table[m.a].gs+=ag; table[m.a].gc+=hg; table[m.a].played++;
+                if(hg>ag) table[m.h].points+=3; else if(hg<ag) table[m.a].points+=3; else {table[m.h].points+=1;table[m.a].points+=1;}
+                totG+=hg+ag; totM++;
+            }
         }
-        mm.lgN = rm;
-        mm.lgAvg = rm ? (rg / rm).toFixed(2) : "0";
-    }
-    const fixtureMatches = parseMatches(fixtureRaw, true);
+    });
+
+    // Fikstür: tüm geçmişin verisiyle (o an mevcut olan bilgi)
+    const finalL = +Lnow().toFixed(2);
+    fixtureMatches.forEach(m=>{ m.preH=snap(m.h); m.preA=snap(m.a); m.preL=finalL; m.preN=totM; });
+
+    leagueFinal = { matches: totM, avgPerMatch: totM? (totG/totM).toFixed(2):"0" };
     allMatches = [...fixtureMatches.reverse(), ...pastMatches];
     renderList();
 }
 
-function renderList() {
-    const log = document.getElementById('log'); log.innerHTML = "";
-    const filterPred = document.getElementById('filter_prediction').value;
-    const filterFocus = document.getElementById('filter_focus').value;
-    const f1_min = parseFloat(document.getElementById('f1_min').value) || 0;
-    const f1_max = parseFloat(document.getElementById('f1_max').value) || 99;
-    const fx_min = parseFloat(document.getElementById('fx_min').value) || 0;
-    const fx_max = parseFloat(document.getElementById('fx_max').value) || 99;
-    const f2_min = parseFloat(document.getElementById('f2_min').value) || 0;
-    const f2_max = parseFloat(document.getElementById('f2_max').value) || 99;
-    const r_min = parseInt(document.getElementById('rank_min').value) || 1;
-    const r_max = parseInt(document.getElementById('rank_max').value) || 100;
-    let hits = 0, count = 0;
+function renderList(){
+    const log = document.getElementById('log'); log.innerHTML="";
+    const fShield = document.getElementById('filter_shield').value;
+    const fPred = document.getElementById('filter_prediction').value;
+    const fFocus = document.getElementById('filter_focus').value;
+    const f1m=parseFloat(document.getElementById('f1_min').value)||0, f1M=parseFloat(document.getElementById('f1_max').value)||99;
+    const fxm=parseFloat(document.getElementById('fx_min').value)||0, fxM=parseFloat(document.getElementById('fx_max').value)||99;
+    const f2m=parseFloat(document.getElementById('f2_min').value)||0, f2M=parseFloat(document.getElementById('f2_max').value)||99;
+    const rMin=parseInt(document.getElementById('rank_min').value)||1, rMax=parseInt(document.getElementById('rank_max').value)||100;
+    let hits=0, count=0, shTotal=0, shDraw=0, shFut=0;
 
-    allMatches.forEach(m => {
-        let hInfo = leagueTable[m.h] || {rank:0, avgGS:0, avgGC:0};
-        let aInfo = leagueTable[m.a] || {rank:0, avgGS:0, avgGC:0};
-        let dna = solveRadicalDNA(m.od[0], m.od[1], m.od[2], hInfo, aInfo, hInfo.rank, aInfo.rank);
+    allMatches.forEach(m=>{
+        const H=m.preH||{avgGS:0,avgGC:0,rank:0,played:0};
+        const A=m.preA||{avgGS:0,avgGC:0,rank:0,played:0};
+        const dna = solveRadicalDNA(m.od[0], m.od[1], m.od[2], H, A);
+        const shield = drawShield(m);
+        const decision = shield ? 'X' : dna.decision;
 
-        if (!m.fut && (hInfo.rank < r_min || hInfo.rank > r_max || aInfo.rank < r_min || aInfo.rank > r_max)) return;
-        if (m.od[0] < f1_min || m.od[0] > f1_max || m.od[1] < fx_min || m.od[1] > fx_max || m.od[2] < f2_min || m.od[2] > f2_max) return;
-        if (filterPred !== "ALL" && dna.decision !== filterPred) return;
+        // filtreler
+        if(fShield==='SHIELD' && !shield) return;
+        if(!m.fut && H.rank>0 && A.rank>0 && (H.rank<rMin||H.rank>rMax||A.rank<rMin||A.rank>rMax)) return;
+        if(m.od[0]<f1m||m.od[0]>f1M||m.od[1]<fxm||m.od[1]>fxM||m.od[2]<f2m||m.od[2]>f2M) return;
+        if(fPred!=="ALL" && decision!==fPred) return;
 
-        let isCorrect = (dna.decision === m.r);
-        if(!m.fut) { count++; if(isCorrect) hits++; }
+        let isCorrect = (decision===m.r);
+        if(!m.fut){ count++; if(isCorrect) hits++; if(shield){ shTotal++; if(m.r==='X') shDraw++; } }
+        else if(shield){ shFut++; }
 
-        let lgN = m.fut ? leagueStats.matches : (m.lgN || 0);
-        let lgA = m.fut ? leagueStats.avgPerMatch : (m.lgAvg || "0");
+        let rowClass = m.fut ? 'future-match' : (fFocus==="ALL" ? (isCorrect?'win':'loss') : (m.r===fFocus?'full-win':'full-loss'));
+        let shieldClass = shield ? 'shield-hit' : '';
+        let drawBorder = (!shield && decision==='X') ? 'draw-highlight' : '';
 
-        let rowClass = m.fut ? 'future-match' : (filterFocus === "ALL" ? (isCorrect ? 'win' : 'loss') : (m.r === filterFocus ? 'full-win' : 'full-loss'));
-        let drawBorder = (dna.decision === 'X') ? 'draw-highlight' : '';
+        // öneri metni
+        let sugg;
+        if(m.fut){ sugg = shield ? '<span class="badge-draw">🛡️ BERABERE</span>' : (decision==='X' ? 'X eğilim' : '<span class="badge-no">değil</span>'); }
+        else { sugg = isCorrect ? 'BAŞARILI' : 'HATALI'; }
 
         log.innerHTML += `
-            <div class="match-row ${rowClass} ${drawBorder}">
-                <div class="col-teams">${m.h} (#${hInfo.rank}) - ${m.a} (#${aInfo.rank})</div>
-                <div class="col-score">${m.sc === 'PENDING' ? '?' : m.sc}</div>
-                <div class="col-goals">LIG ${lgN}maç · ${lgA} gol/maç ┃ Ev at${hInfo.avgGS} ye${hInfo.avgGC} ┃ Dep at${aInfo.avgGS} ye${aInfo.avgGC}</div>
-                <div class="col-dna">DNA:${dna.puan}/10 | T:${dna.decision} | S:${m.r}</div>
+            <div class="match-row ${rowClass} ${drawBorder} ${shieldClass}">
+                <div class="col-teams">${shield?'🛡️ ':''}${m.h} (#${H.rank||'-'}) - ${m.a} (#${A.rank||'-'})</div>
+                <div class="col-score">${m.sc==='PENDING'?'?':m.sc}</div>
+                <div class="col-goals">LIG ${m.preN}m·${m.preL}g/m ┃ ${m.h.slice(0,3)} at${H.avgGS} ye${H.avgGC} ┃ ${m.a.slice(0,3)} at${A.avgGS} ye${A.avgGC}</div>
+                <div class="col-dna">Öneri: <b>${decision}</b> | Sonuç: ${m.sc==='PENDING'?'?':m.r} | dna${dna.puan}</div>
                 <div class="col-odds">1(${m.od[0]}) X(${m.od[1]}) 2(${m.od[2]})</div>
-                <div class="col-status">${m.fut ? 'FUTURE' : (isCorrect ? 'BAŞARILI' : 'HATALI')}</div>
+                <div class="col-status">${sugg}</div>
             </div>`;
     });
-    document.getElementById('stats').innerText = `DNA başarı: %${count > 0 ? ((hits/count)*100).toFixed(1) : 0} (${hits}/${count})  ·  Lig: ${leagueStats.matches} maç, maç başı ${leagueStats.avgPerMatch} gol`;
+
+    const acc = count>0 ? ((hits/count)*100).toFixed(1) : 0;
+    const shAcc = shTotal>0 ? ((shDraw/shTotal)*100).toFixed(1) : 0;
+    document.getElementById('stats').innerHTML =
+        `Genel öneri isabeti: <b>%${acc}</b> (${hits}/${count}) · Lig: ${leagueFinal.matches} maç, maç başı ${leagueFinal.avgPerMatch} gol<br>` +
+        `<span class="sh">🛡️ Beraberlik Kalkanı: geçmişte ${shTotal} maçın ${shDraw}'i berabere bitti → <b>%${shAcc} isabet</b>` +
+        (shFut>0 ? ` · sıradaki maçlarda ${shFut} beraberlik adayı 🎯` : '') + `</span>`;
 }
 </script>
 </body>
