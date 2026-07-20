@@ -213,6 +213,17 @@ function superParse() {
     teamSet.clear();
     const pastMatches = parseMatches(pastRaw, false);
     calculateStandings(pastMatches);
+    // Moyenne de buts CUMULÉE "jusqu'à ce match" (du plus ancien = bas de la liste, vers le plus récent = haut)
+    let rg = 0, rm = 0;
+    for (let i = pastMatches.length - 1; i >= 0; i--) {
+        const mm = pastMatches[i];
+        if (mm.sc !== "PENDING") {
+            const s = mm.sc.split(':'), hg = parseInt(s[0]), ag = parseInt(s[1]);
+            if (!isNaN(hg) && !isNaN(ag)) { rg += hg + ag; rm++; }
+        }
+        mm.lgN = rm;
+        mm.lgAvg = rm ? (rg / rm).toFixed(2) : "0";
+    }
     const fixtureMatches = parseMatches(fixtureRaw, true);
     allMatches = [...fixtureMatches.reverse(), ...pastMatches];
     renderList();
@@ -244,6 +255,9 @@ function renderList() {
         let isCorrect = (dna.decision === m.r);
         if(!m.fut) { count++; if(isCorrect) hits++; }
 
+        let lgN = m.fut ? leagueStats.matches : (m.lgN || 0);
+        let lgA = m.fut ? leagueStats.avgPerMatch : (m.lgAvg || "0");
+
         let rowClass = m.fut ? 'future-match' : (filterFocus === "ALL" ? (isCorrect ? 'win' : 'loss') : (m.r === filterFocus ? 'full-win' : 'full-loss'));
         let drawBorder = (dna.decision === 'X') ? 'draw-highlight' : '';
 
@@ -251,7 +265,7 @@ function renderList() {
             <div class="match-row ${rowClass} ${drawBorder}">
                 <div class="col-teams">${m.h} (#${hInfo.rank}) - ${m.a} (#${aInfo.rank})</div>
                 <div class="col-score">${m.sc === 'PENDING' ? '?' : m.sc}</div>
-                <div class="col-goals">LIG ${leagueStats.matches}maç · ${leagueStats.avgPerMatch} gol/maç ┃ Ev at${hInfo.avgGS} ye${hInfo.avgGC} ┃ Dep at${aInfo.avgGS} ye${aInfo.avgGC}</div>
+                <div class="col-goals">LIG ${lgN}maç · ${lgA} gol/maç ┃ Ev at${hInfo.avgGS} ye${hInfo.avgGC} ┃ Dep at${aInfo.avgGS} ye${aInfo.avgGC}</div>
                 <div class="col-dna">DNA:${dna.puan}/10 | T:${dna.decision} | S:${m.r}</div>
                 <div class="col-odds">1(${m.od[0]}) X(${m.od[1]}) 2(${m.od[2]})</div>
                 <div class="col-status">${m.fut ? 'FUTURE' : (isCorrect ? 'BAŞARILI' : 'HATALI')}</div>
