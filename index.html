@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enfibonacci v27.4</title>
+    <style>
+        :root{--bg:#0f1420;--card:#1a2233;--soft:#131a29;--line:#2a3550;--ink:#eaf0fb;--muted:#94a2bd;--accent:#6d86f0;--accent-soft:rgba(109,134,240,.16);--green:#22c55e;--red:#ef4444;--amber:#f59e0b;}
+        *{box-sizing:border-box}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px;margin:0}
+        .wrapper{max-width:1450px;margin:auto;border:1px solid var(--line);padding:20px;background:var(--card);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+        h2{text-align:center;color:var(--ink);font-weight:700;border-bottom:1px solid var(--line);padding-bottom:12px;margin:0 0 16px}
+        .input-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+        textarea{width:100%;height:150px;background:var(--soft);color:var(--ink);border:1px solid var(--line);padding:10px;font-size:12px;border-radius:10px;box-sizing:border-box;resize:vertical;font-family:inherit}
+        textarea::placeholder{color:#5b6885}
+        .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+        .card{background:var(--card);border:1px solid var(--line);padding:18px;border-radius:14px}
+        button{background:var(--accent);color:#fff;border:none;padding:13px;cursor:pointer;font-weight:700;width:100%;font-size:15px;margin-top:10px;border-radius:11px;transition:opacity .1s}
+        button:active{opacity:.85}
+        .filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--soft);padding:14px;border-radius:12px;margin:10px 0;border:1px solid var(--line)}
+        .filter-group{display:flex;flex-direction:column;gap:5px}
+        .filter-group label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.3px}
+
+        /* TEK SATIR MATCH-ROW (kalınlık korunuyor) */
+        .match-row{border-bottom:1px solid var(--line);padding:5px 10px;font-size:11px;display:flex;align-items:center;justify-content:space-between;transition:.15s;margin-bottom:2px;border-radius:6px;color:var(--ink);border-left:4px solid transparent;gap:10px;white-space:nowrap}
+        .future-match{background:var(--accent-soft)!important;border-left:5px solid var(--accent)!important;font-weight:700}
+        .win{background:rgba(34,197,94,.10)!important;border-left:4px solid var(--green)}
+        .loss{background:rgba(239,68,68,.10)!important;border-left:4px solid var(--red)}
+        .full-win{background:rgba(34,197,94,.30)!important;border-left:4px solid var(--green)}
+        .full-loss{background:rgba(239,68,68,.30)!important;border-left:4px solid var(--red)}
+        .draw-highlight{outline:1px solid var(--amber);outline-offset:-2px}
+
+        .col-teams{flex:2;min-width:240px;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+        .col-score{width:44px;text-align:center;color:var(--amber);font-weight:700}
+        .col-goals{flex:1.7;color:var(--muted);font-style:normal;font-size:10px;overflow:hidden;text-overflow:ellipsis}
+        .col-dna{width:150px;text-align:center;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+        .col-odds{width:180px;text-align:right;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums}
+        .col-status{width:80px;text-align:center;font-weight:800;font-size:9px}
+
+        input,select{background:var(--soft);color:var(--ink);border:1px solid var(--line);padding:7px;border-radius:8px;font-family:inherit;font-size:11px}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+        #log{height:700px;overflow-y:auto;padding-right:5px;border-top:1px solid var(--line);margin-top:10px}
+        #stats{color:var(--ink);background:var(--soft);padding:12px;border-radius:10px;text-align:center;font-size:15px;border:1px solid var(--line);margin-bottom:10px;font-weight:600}
+        h4{margin:0 0 5px 0;font-size:11px;color:var(--muted);text-transform:uppercase}
+        .odds-filter-container{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;background:var(--soft);padding:10px;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+        .odds-sub-group{display:flex;flex-direction:column;gap:3px}
+        .odds-sub-group label{font-size:9px;color:var(--accent);text-align:center;font-weight:700}
+        .btn-amber{background:var(--amber)!important;color:#2a1e00!important}
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <h2>🧬 ENFIBONACCI v27.4</h2>
+
+    <div class="input-grid">
+        <div>
+            <h4>1. Geçmiş maçlar</h4>
+            <textarea id="pastInput" placeholder="Skorlu geçmiş maçları yapıştırın..."></textarea>
+        </div>
+        <div>
+            <h4>2. Fikstür</h4>
+            <textarea id="fixtureInput" placeholder="Gelecek maçları yapıştırın..."></textarea>
+        </div>
+    </div>
+    <button onclick="superParse()">📊 Analiz et ve listele</button>
+
+    <div class="grid">
+        <div class="card">
+            <div class="filter-grid">
+                <div class="filter-group" style="grid-column: span 2;">
+                    <label>Sonuç vurgulama (odak analizi)</label>
+                    <select id="filter_focus" onchange="renderList()">
+                        <option value="ALL">DNA odaklı görünüm</option>
+                        <option value="1">1 odaklı (1 bitenler yeşil)</option>
+                        <option value="X">X odaklı (X bitenler yeşil)</option>
+                        <option value="2">2 odaklı (2 bitenler yeşil)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Sistem tahmini</label>
+                    <select id="filter_prediction" onchange="renderList()">
+                        <option value="ALL">Hepsi</option>
+                        <option value="1">Sadece 1</option>
+                        <option value="X">Sadece X</option>
+                        <option value="2">Sadece 2</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sıralama aralığı</label>
+                    <div style="display: flex; gap:5px;">
+                        <input type="number" id="rank_min" value="1" min="1" style="width: 50%">
+                        <input type="number" id="rank_max" value="30" min="1" style="width: 50%">
+                    </div>
+                </div>
+            </div>
+
+            <div class="odds-filter-container">
+                <div class="odds-sub-group">
+                    <label>1 (min/max)</label>
+                    <input type="number" id="f1_min" value="0.00" step="0.01">
+                    <input type="number" id="f1_max" value="99.0" step="0.01">
+                </div>
+                <div class="odds-sub-group">
+                    <label>X (min/max)</label>
+                    <input type="number" id="fx_min" value="0.00" step="0.01">
+                    <input type="number" id="fx_max" value="99.0" step="0.01">
+                </div>
+                <div class="odds-sub-group">
+                    <label>2 (min/max)</label>
+                    <input type="number" id="f2_min" value="0.00" step="0.01">
+                    <input type="number" id="f2_max" value="99.0" step="0.01">
+                </div>
+            </div>
+
+            <button class="btn-amber" onclick="renderList()">Filtreleri güncelle</button>
+            <div id="stats" style="margin-top:15px;"></div>
+            <div id="log"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allMatches = [];
+let teamSet = new Set();
+let leagueTable = {};
+let leagueStats = { matches:0, goals:0, avgPerMatch:"0", avgPerTeam:"0" };
+
+function ultraClean(text) {
+    if (!text) return "";
+    return text
+        .replace(/Today|Yesterday|Round|B's|1X2|Today\s\d{2}:\d{2}/g, '')
+        .replace(/\d{2}\.\d{2}\.\s\d{2}:\d{2}/g, '')
+        .replace(/^\.|\.$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function solveRadicalDNA(o1, ox, o2, hStats, aStats, hRank, aRank) {
+    let diff = Math.abs(o1 - o2);
+    let puan = 0;
+    if (ox <= 3.45) puan += 4;
+    if (diff <= 0.85) puan += 4;
+    if (ox < 3.05) puan += 2;
+    if (hRank > aRank && aRank <= 5 && hStats && hStats.avgGC < 1.3) { puan += 1; }
+    if (hStats && aStats && hStats.avgGC < 1.1 && aStats.avgGC < 1.1) { puan += 1; }
+    return { decision: (puan >= 5 ? 'X' : (o1 < o2 ? '1' : '2')), puan: Math.min(puan, 10), diff };
+}
+
+function calculateStandings(matches) {
+    leagueTable = {};
+    let totMatches = 0, totGoals = 0;
+    teamSet.forEach(team => { leagueTable[team] = { points: 0, rank: 0, gs: 0, gc: 0, played: 0 }; });
+    matches.forEach(m => {
+        if (!m.fut && m.sc !== "PENDING") {
+            let s = m.sc.split(':');
+            let hG = parseInt(s[0]), aG = parseInt(s[1]);
+            if (!isNaN(hG) && !isNaN(aG)) {
+                totMatches++; totGoals += hG + aG;
+                leagueTable[m.h].gs += hG; leagueTable[m.h].gc += aG; leagueTable[m.h].played++;
+                leagueTable[m.a].gs += aG; leagueTable[m.a].gc += hG; leagueTable[m.a].played++;
+                if (hG > aG) leagueTable[m.h].points += 3;
+                else if (hG < aG) leagueTable[m.a].points += 3;
+                else { leagueTable[m.h].points += 1; leagueTable[m.a].points += 1; }
+            }
+        }
+    });
+    leagueStats = {
+        matches: totMatches, goals: totGoals,
+        avgPerMatch: totMatches ? (totGoals / totMatches).toFixed(2) : "0",
+        avgPerTeam: totMatches ? (totGoals / (totMatches * 2)).toFixed(2) : "0"
+    };
+    let sorted = Array.from(teamSet).sort((a,b) => (leagueTable[b].points - leagueTable[a].points) || (leagueTable[b].gs - leagueTable[b].gc) - (leagueTable[a].gs - leagueTable[a].gc) || a.localeCompare(b));
+    sorted.forEach((team, index) => {
+        leagueTable[team].rank = index + 1;
+        leagueTable[team].avgGS = leagueTable[team].played > 0 ? (leagueTable[team].gs / leagueTable[team].played).toFixed(1) : 0;
+        leagueTable[team].avgGC = leagueTable[team].played > 0 ? (leagueTable[team].gc / leagueTable[team].played).toFixed(1) : 0;
+    });
+}
+
+function parseMatches(raw, isFixture) {
+    const lines = raw.split(/\r?\n/);
+    const results = [];
+    const matchRegex = /^(?:.*?\d{2}:\d{2}\s+)?(.+?)\s+-\s+(.+?)(?:\s+(\d{1,2}\s*:\s*\d{1,2}))?\s+(?:(\d{1,2})\s+)?(\d+\.\d+)\s+(\d+\.\d+)\s+(\d+\.\d+)/;
+    lines.forEach(line => {
+        let cleanLine = line.trim();
+        if (!cleanLine) return;
+        let match = cleanLine.match(matchRegex);
+        if (match) {
+            let home = ultraClean(match[1]); let away = ultraClean(match[2]);
+            let score = match[3] ? match[3].replace(/\s+/g, '') : "PENDING";
+            let o1 = parseFloat(match[5]), ox = parseFloat(match[6]), o2 = parseFloat(match[7]);
+            if (home && away && !isNaN(o1)) {
+                teamSet.add(home); teamSet.add(away);
+                let actual = "PENDING";
+                if(!isFixture && score !== "PENDING") {
+                    let s = score.split(':');
+                    actual = (parseInt(s[0]) === parseInt(s[1])) ? 'X' : (parseInt(s[0]) > parseInt(s[1]) ? '1' : '2');
+                }
+                results.push({ h: home, a: away, sc: score, od: [o1, ox, o2], r: actual, fut: isFixture });
+            }
+        }
+    });
+    return results;
+}
+
+function superParse() {
+    const pastRaw = document.getElementById('pastInput').value;
+    const fixtureRaw = document.getElementById('fixtureInput').value;
+    teamSet.clear();
+    const pastMatches = parseMatches(pastRaw, false);
+    calculateStandings(pastMatches);
+    const fixtureMatches = parseMatches(fixtureRaw, true);
+    allMatches = [...fixtureMatches.reverse(), ...pastMatches];
+    renderList();
+}
+
+function renderList() {
+    const log = document.getElementById('log'); log.innerHTML = "";
+    const filterPred = document.getElementById('filter_prediction').value;
+    const filterFocus = document.getElementById('filter_focus').value;
+    const f1_min = parseFloat(document.getElementById('f1_min').value) || 0;
+    const f1_max = parseFloat(document.getElementById('f1_max').value) || 99;
+    const fx_min = parseFloat(document.getElementById('fx_min').value) || 0;
+    const fx_max = parseFloat(document.getElementById('fx_max').value) || 99;
+    const f2_min = parseFloat(document.getElementById('f2_min').value) || 0;
+    const f2_max = parseFloat(document.getElementById('f2_max').value) || 99;
+    const r_min = parseInt(document.getElementById('rank_min').value) || 1;
+    const r_max = parseInt(document.getElementById('rank_max').value) || 100;
+    let hits = 0, count = 0;
+
+    allMatches.forEach(m => {
+        let hInfo = leagueTable[m.h] || {rank:0, avgGS:0, avgGC:0};
+        let aInfo = leagueTable[m.a] || {rank:0, avgGS:0, avgGC:0};
+        let dna = solveRadicalDNA(m.od[0], m.od[1], m.od[2], hInfo, aInfo, hInfo.rank, aInfo.rank);
+
+        if (!m.fut && (hInfo.rank < r_min || hInfo.rank > r_max || aInfo.rank < r_min || aInfo.rank > r_max)) return;
+        if (m.od[0] < f1_min || m.od[0] > f1_max || m.od[1] < fx_min || m.od[1] > fx_max || m.od[2] < f2_min || m.od[2] > f2_max) return;
+        if (filterPred !== "ALL" && dna.decision !== filterPred) return;
+
+        let isCorrect = (dna.decision === m.r);
+        if(!m.fut) { count++; if(isCorrect) hits++; }
+
+        let rowClass = m.fut ? 'future-match' : (filterFocus === "ALL" ? (isCorrect ? 'win' : 'loss') : (m.r === filterFocus ? 'full-win' : 'full-loss'));
+        let drawBorder = (dna.decision === 'X') ? 'draw-highlight' : '';
+
+        log.innerHTML += `
+            <div class="match-row ${rowClass} ${drawBorder}">
+                <div class="col-teams">${m.h} (#${hInfo.rank}) - ${m.a} (#${aInfo.rank})</div>
+                <div class="col-score">${m.sc === 'PENDING' ? '?' : m.sc}</div>
+                <div class="col-goals">LIG ${leagueStats.matches}maç · ${leagueStats.avgPerMatch} gol/maç ┃ Ev at${hInfo.avgGS} ye${hInfo.avgGC} ┃ Dep at${aInfo.avgGS} ye${aInfo.avgGC}</div>
+                <div class="col-dna">DNA:${dna.puan}/10 | T:${dna.decision} | S:${m.r}</div>
+                <div class="col-odds">1(${m.od[0]}) X(${m.od[1]}) 2(${m.od[2]})</div>
+                <div class="col-status">${m.fut ? 'FUTURE' : (isCorrect ? 'BAŞARILI' : 'HATALI')}</div>
+            </div>`;
+    });
+    document.getElementById('stats').innerText = `DNA başarı: %${count > 0 ? ((hits/count)*100).toFixed(1) : 0} (${hits}/${count})  ·  Lig: ${leagueStats.matches} maç, maç başı ${leagueStats.avgPerMatch} gol`;
+}
+</script>
+</body>
+</html>
