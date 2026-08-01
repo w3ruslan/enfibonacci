@@ -103,6 +103,9 @@
 
   .gs{color:var(--muted);font-size:11px;font-family:ui-monospace,Menlo,monospace;white-space:nowrap;
     overflow:hidden;text-overflow:ellipsis}
+  .gs .v{font-weight:400}
+  .gs .v.hi{color:#0f1420;background:var(--accent);font-weight:800;border-radius:4px;padding:1px 4px}
+  .row.hasgoal{box-shadow:inset 3px 0 0 var(--accent)}
 
   .res{text-align:center;font-weight:800;font-size:13px}
   .res.r1{color:var(--blue)} .res.rX{color:var(--amber)} .res.r2{color:var(--pink)} .res.rP{color:var(--muted)}
@@ -161,24 +164,36 @@
         <span class="lbl">Sıralama (min / max)</span>
         <div class="pair"><input type="number" id="rank_min" value="1" min="1"><input type="number" id="rank_max" value="30" min="1"></div>
       </div>
-      <div class="fgroup">
-        <span class="lbl">Oran 1 (min / max)</span>
-        <div class="pair"><input type="number" id="f1_min" value="0.00" step="0.01"><input type="number" id="f1_max" value="99.0" step="0.01"></div>
+    </div>
+
+    <div class="subblock">
+      <div class="subhead">
+        <span class="lbl" style="margin:0;min-height:auto">💱 Oran filtresi</span>
+        <button class="mini" onclick="resetOdds()">↺ Değerleri sıfırla</button>
       </div>
-      <div class="fgroup">
-        <span class="lbl">Oran X (min / max)</span>
-        <div class="pair"><input type="number" id="fx_min" value="0.00" step="0.01"><input type="number" id="fx_max" value="99.0" step="0.01"></div>
-      </div>
-      <div class="fgroup">
-        <span class="lbl">Oran 2 (min / max)</span>
-        <div class="pair"><input type="number" id="f2_min" value="0.00" step="0.01"><input type="number" id="f2_max" value="99.0" step="0.01"></div>
+      <div class="filters">
+        <div class="fgroup">
+          <span class="lbl">Oran 1 (min / max)</span>
+          <div class="pair"><input type="number" id="f1_min" value="0.00" step="0.01"><input type="number" id="f1_max" value="99.0" step="0.01"></div>
+        </div>
+        <div class="fgroup">
+          <span class="lbl">Oran X (min / max)</span>
+          <div class="pair"><input type="number" id="fx_min" value="0.00" step="0.01"><input type="number" id="fx_max" value="99.0" step="0.01"></div>
+        </div>
+        <div class="fgroup">
+          <span class="lbl">Oran 2 (min / max)</span>
+          <div class="pair"><input type="number" id="f2_min" value="0.00" step="0.01"><input type="number" id="f2_max" value="99.0" step="0.01"></div>
+        </div>
       </div>
     </div>
 
     <div class="subblock">
       <div class="subhead">
         <span class="lbl" style="margin:0;min-height:auto">⚽ Gol ortalaması filtresi</span>
-        <button class="mini" onclick="copyHomeToAway()">⇄ Ev değerlerini deplasmana kopyala</button>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="mini" onclick="copyHomeToAway()">⇄ Ev → Dep. kopyala</button>
+          <button class="mini" onclick="resetGoals()">↺ Değerleri sıfırla</button>
+        </span>
       </div>
       <div class="filters">
         <div class="fgroup">
@@ -305,6 +320,13 @@ function copyHomeToAway(){
     .forEach(([a,b])=>{ document.getElementById(b).value = document.getElementById(a).value; });
   renderList();
 }
+// varsayılanlar + sıfırlama
+const DEF={f1_min:'0.00',f1_max:'99.0',fx_min:'0.00',fx_max:'99.0',f2_min:'0.00',f2_max:'99.0',
+           hgs_min:'0.0',hgs_max:'9.9',hgc_min:'0.0',hgc_max:'9.9',
+           ags_min:'0.0',ags_max:'9.9',agc_min:'0.0',agc_max:'9.9'};
+function resetFields(ids){ ids.forEach(id=>{ document.getElementById(id).value=DEF[id]; }); renderList(); }
+function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min','f2_max']); }
+function resetGoals(){ resetFields(['hgs_min','hgs_max','hgc_min','hgc_max','ags_min','ags_max','agc_min','agc_max']); }
 
 function renderList() {
     const log = document.getElementById('log');
@@ -320,6 +342,12 @@ function renderList() {
     const ags_min=num('ags_min',0), ags_max=num('ags_max',9.9);
     const agc_min=num('agc_min',0), agc_max=num('agc_max',9.9);
     const r_min=num('rank_min',1),  r_max=num('rank_max',100);
+
+    // hangi gol filtresi daraltılmış? (vurgulama için)
+    const nar=(mn,mx)=> (mn>0 || mx<9.9);
+    const nHGS=nar(hgs_min,hgs_max), nHGC=nar(hgc_min,hgc_max),
+          nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
+    const golAktif = nHGS||nHGC||nAGS||nAGC;
 
     let n1=0, nX=0, n2=0, futs=0, html='';
 
@@ -352,13 +380,15 @@ function renderList() {
 
         const resCls = m.r==='1'?'r1':(m.r==='X'?'rX':(m.r==='2'?'r2':'rP'));
 
-        html += `<div class="row ${cls}">
+        const gv=(val,on)=>`<span class="v${on?' hi':''}">${val}</span>`;
+
+        html += `<div class="row ${cls}${golAktif?' hasgoal':''}">
             <span class="bar"></span>
             <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
             + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
             <span class="odds"><span><i>1</i>${m.od[0].toFixed(2)}</span><span><i>X</i>${m.od[1].toFixed(2)}</span><span><i>2</i>${m.od[2].toFixed(2)}</span></span>
-            <span class="gs">${hInfo.avgGS}/${hInfo.avgGC} · ${aInfo.avgGS}/${aInfo.avgGC}</span>
+            <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
         </div>`;
     });
