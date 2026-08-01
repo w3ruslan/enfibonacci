@@ -49,6 +49,10 @@
   .pair{display:flex;gap:5px}
   .pair input{text-align:center;font-size:11.5px;padding:6px 2px;border-radius:8px}
 
+  .subblock{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:12px;padding:11px;margin-top:10px}
+  .subhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+  .mini{padding:6px 11px;font-size:11px;font-weight:700;border-radius:9px}
+
   /* uygula butonu — belirgin */
   .b-apply{background:var(--accent);color:#0f1420;border-color:var(--accent);width:100%;
     padding:14px;font-size:14.5px;font-weight:800;letter-spacing:.4px;margin-top:14px;
@@ -169,17 +173,31 @@
         <span class="lbl">Oran 2 (min / max)</span>
         <div class="pair"><input type="number" id="f2_min" value="0.00" step="0.01"><input type="number" id="f2_max" value="99.0" step="0.01"></div>
       </div>
-      <div class="fgroup">
-        <span class="lbl">Attığı gol (min / max)</span>
-        <div class="pair"><input type="number" id="gs_min" value="0.0" step="0.1"><input type="number" id="gs_max" value="9.9" step="0.1"></div>
-      </div>
-      <div class="fgroup">
-        <span class="lbl">Yediği gol (min / max)</span>
-        <div class="pair"><input type="number" id="gc_min" value="0.0" step="0.1"><input type="number" id="gc_max" value="9.9" step="0.1"></div>
-      </div>
     </div>
-    <div style="color:var(--muted);font-size:11px;margin-top:8px">
-      Gol ortalaması filtresi <b>iki takım için birden</b> geçerlidir — iki takım da aralıkta değilse maç listede çıkmaz.
+
+    <div class="subblock">
+      <div class="subhead">
+        <span class="lbl" style="margin:0;min-height:auto">⚽ Gol ortalaması filtresi</span>
+        <button class="mini" onclick="copyHomeToAway()">⇄ Ev değerlerini deplasmana kopyala</button>
+      </div>
+      <div class="filters">
+        <div class="fgroup">
+          <span class="lbl">Ev · attığı (min / max)</span>
+          <div class="pair"><input type="number" id="hgs_min" value="0.0" step="0.1"><input type="number" id="hgs_max" value="9.9" step="0.1"></div>
+        </div>
+        <div class="fgroup">
+          <span class="lbl">Ev · yediği (min / max)</span>
+          <div class="pair"><input type="number" id="hgc_min" value="0.0" step="0.1"><input type="number" id="hgc_max" value="9.9" step="0.1"></div>
+        </div>
+        <div class="fgroup">
+          <span class="lbl">Dep. · attığı (min / max)</span>
+          <div class="pair"><input type="number" id="ags_min" value="0.0" step="0.1"><input type="number" id="ags_max" value="9.9" step="0.1"></div>
+        </div>
+        <div class="fgroup">
+          <span class="lbl">Dep. · yediği (min / max)</span>
+          <div class="pair"><input type="number" id="agc_min" value="0.0" step="0.1"><input type="number" id="agc_max" value="9.9" step="0.1"></div>
+        </div>
+      </div>
     </div>
 
     <button class="b-apply" onclick="renderList()">🔎 Filtreleri uygula</button>
@@ -281,6 +299,13 @@ function superParse() {
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+// ev sahibi için girilen aralıkları deplasmana kopyala (simetrik arama için kısayol)
+function copyHomeToAway(){
+  [['hgs_min','ags_min'],['hgs_max','ags_max'],['hgc_min','agc_min'],['hgc_max','agc_max']]
+    .forEach(([a,b])=>{ document.getElementById(b).value = document.getElementById(a).value; });
+  renderList();
+}
+
 function renderList() {
     const log = document.getElementById('log');
     const filterActual = document.getElementById('filter_actual').value;
@@ -290,8 +315,10 @@ function renderList() {
     const f1_min=num('f1_min',0), f1_max=num('f1_max',99);
     const fx_min=num('fx_min',0), fx_max=num('fx_max',99);
     const f2_min=num('f2_min',0), f2_max=num('f2_max',99);
-    const gs_min=num('gs_min',0), gs_max=num('gs_max',9.9);
-    const gc_min=num('gc_min',0), gc_max=num('gc_max',9.9);
+    const hgs_min=num('hgs_min',0), hgs_max=num('hgs_max',9.9);
+    const hgc_min=num('hgc_min',0), hgc_max=num('hgc_max',9.9);
+    const ags_min=num('ags_min',0), ags_max=num('ags_max',9.9);
+    const agc_min=num('agc_min',0), agc_max=num('agc_max',9.9);
     const r_min=num('rank_min',1),  r_max=num('rank_max',100);
 
     let n1=0, nX=0, n2=0, futs=0, html='';
@@ -305,11 +332,13 @@ function renderList() {
         if (m.od[1] < fx_min || m.od[1] > fx_max) return;
         if (m.od[2] < f2_min || m.od[2] > f2_max) return;
 
-        // gol ortalaması filtresi — iki takım için birden
+        // gol ortalaması filtresi — ev ve deplasman ayrı ayrı
         const hGS=parseFloat(hInfo.avgGS)||0, hGC=parseFloat(hInfo.avgGC)||0;
         const aGS=parseFloat(aInfo.avgGS)||0, aGC=parseFloat(aInfo.avgGC)||0;
-        if (hGS < gs_min || hGS > gs_max || aGS < gs_min || aGS > gs_max) return;
-        if (hGC < gc_min || hGC > gc_max || aGC < gc_min || aGC > gc_max) return;
+        if (hGS < hgs_min || hGS > hgs_max) return;
+        if (hGC < hgc_min || hGC > hgc_max) return;
+        if (aGS < ags_min || aGS > ags_max) return;
+        if (aGC < agc_min || aGC > agc_max) return;
 
         if (filterActual !== "ALL" && m.r !== filterActual) return;
 
