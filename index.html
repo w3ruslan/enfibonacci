@@ -50,6 +50,18 @@
   .pair input{text-align:center;font-size:11.5px;padding:6px 2px;border-radius:8px}
 
   .subblock{border:1px solid var(--line);background:rgba(255,255,255,.02);border-radius:12px;padding:11px;margin-top:10px}
+  /* takım filtresi */
+  .teamgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:5px;
+    max-height:210px;overflow-y:auto;margin-top:8px;padding-right:3px}
+  .tchip{display:flex;align-items:center;gap:7px;background:var(--card2);border:1px solid var(--line);
+    border-radius:9px;padding:6px 9px;font-size:12px;cursor:pointer;user-select:none;transition:.12s}
+  .tchip:hover{border-color:var(--accent)}
+  .tchip.on{background:rgba(109,134,240,.20);border-color:var(--accent);font-weight:600}
+  .tchip input{width:auto;margin:0;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+  .tchip .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tchip .cnt{color:var(--muted);font-size:10px;flex-shrink:0}
+  .teamsearch{margin-top:8px;font-size:12px;padding:7px 9px}
+  .teamnote{color:var(--muted);font-size:11px;margin-top:7px}
   .subhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;flex-wrap:wrap}
   .mini{padding:6px 11px;font-size:11px;font-weight:700;border-radius:9px}
 
@@ -215,6 +227,23 @@
       </div>
     </div>
 
+    <div class="subblock">
+      <div class="subhead">
+        <span class="lbl" style="margin:0;min-height:auto">👥 Takım filtresi <span id="teamCount" style="color:var(--accent)"></span></span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <select id="team_mode" onchange="renderList()" style="width:auto;font-size:12px;padding:6px 9px">
+            <option value="only">Sadece seçilenleri göster</option>
+            <option value="hide">Seçilenleri gizle</option>
+          </select>
+          <button class="mini" onclick="selectAllTeams(true)">Tümünü seç</button>
+          <button class="mini" onclick="selectAllTeams(false)">↺ Temizle</button>
+        </span>
+      </div>
+      <input type="text" id="teamSearch" class="teamsearch" placeholder="Takım ara…" oninput="filterTeamChips()">
+      <div id="teamList" class="teamgrid"></div>
+      <div class="teamnote" id="teamNote">Hiç takım seçilmezse filtre çalışmaz — tüm maçlar listelenir.</div>
+    </div>
+
     <button class="b-apply" onclick="renderList()">🔎 Filtreleri uygula</button>
 
     <div class="statbar">
@@ -309,7 +338,40 @@ function superParse() {
     calculateStandings(pastMatches);
     const fixtureMatches = parseMatches(fixtureRaw, true);
     allMatches = [...fixtureMatches.reverse(), ...pastMatches];
+    renderTeamList();
     renderList();
+}
+
+/* ===== TAKIM FİLTRESİ ===== */
+function renderTeamList(){
+  const box=document.getElementById('teamList');
+  const onceki=new Set([...document.querySelectorAll('.tcb:checked')].map(c=>c.value)); // seçimi koru
+  const adet={};
+  allMatches.forEach(m=>{ adet[m.h]=(adet[m.h]||0)+1; adet[m.a]=(adet[m.a]||0)+1; });
+  const takimlar=[...teamSet].sort((a,b)=>a.localeCompare(b,'tr'));
+  box.innerHTML = takimlar.map(t=>{
+    const sec = onceki.has(t);
+    return `<label class="tchip${sec?' on':''}">
+      <input type="checkbox" class="tcb" value="${esc(t)}"${sec?' checked':''} onchange="onTeamToggle(this)">
+      <span class="nm">${esc(t)}</span><span class="cnt">${adet[t]||0}</span></label>`;
+  }).join('') || '<div class="teamnote">Önce maçları yükleyin.</div>';
+  document.getElementById('teamCount').textContent = takimlar.length ? '('+takimlar.length+' takım)' : '';
+  filterTeamChips();
+}
+function onTeamToggle(cb){ cb.parentElement.classList.toggle('on',cb.checked); renderList(); }
+function selectAllTeams(on){
+  document.querySelectorAll('#teamList .tchip').forEach(el=>{
+    if(el.style.display==='none') return;                 // aramada gizliyse dokunma
+    const cb=el.querySelector('.tcb'); if(!cb) return;
+    cb.checked=on; el.classList.toggle('on',on);
+  });
+  renderList();
+}
+function filterTeamChips(){
+  const q=(document.getElementById('teamSearch').value||'').toLocaleLowerCase('tr');
+  document.querySelectorAll('#teamList .tchip').forEach(el=>{
+    el.style.display = el.innerText.toLocaleLowerCase('tr').includes(q) ? 'flex' : 'none';
+  });
 }
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -344,6 +406,18 @@ function renderList() {
     const r_min=num('rank_min',1),  r_max=num('rank_max',100);
 
     // hangi gol filtresi daraltılmış? (vurgulama için)
+    // takım filtresi
+    const teamMode=document.getElementById('team_mode').value;
+    const secTakim=new Set([...document.querySelectorAll('.tcb:checked')].map(c=>c.value));
+    const tNote=document.getElementById('teamNote');
+    if(tNote){
+      tNote.textContent = secTakim.size===0
+        ? 'Hiç takım seçilmezse filtre çalışmaz — tüm maçlar listelenir.'
+        : (teamMode==='only'
+            ? `✔ ${secTakim.size} takım seçili — sadece bu takımların maçları gösteriliyor.`
+            : `✖ ${secTakim.size} takım seçili — bu takımların maçları gizleniyor.`);
+    }
+
     const nar=(mn,mx)=> (mn>0 || mx<9.9);
     const nHGS=nar(hgs_min,hgs_max), nHGC=nar(hgc_min,hgc_max),
           nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
@@ -354,6 +428,13 @@ function renderList() {
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
         let aInfo = leagueTable[m.a] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
+
+        // seçili takımlara göre göster / gizle
+        if (secTakim.size) {
+          const iceriyor = secTakim.has(m.h) || secTakim.has(m.a);
+          if (teamMode === 'only' && !iceriyor) return;
+          if (teamMode === 'hide' &&  iceriyor) return;
+        }
 
         if (!m.fut && (hInfo.rank < r_min || hInfo.rank > r_max || aInfo.rank < r_min || aInfo.rank > r_max)) return;
         if (m.od[0] < f1_min || m.od[0] > f1_max) return;
