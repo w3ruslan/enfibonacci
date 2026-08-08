@@ -86,7 +86,9 @@
 
   /* ---- MAÇ SATIRLARI (kompakt, tek satır) ---- */
   #log{margin-top:6px;max-height:70vh;overflow-y:auto;padding-right:4px}
-  .head-row,.row{display:grid;grid-template-columns:6px minmax(240px,1fr) 190px 140px 46px;gap:10px;align-items:center}
+  .head-row,.row{display:grid;grid-template-columns:6px minmax(210px,1fr) 248px 140px 46px;gap:10px;align-items:center}
+  .dlt{color:var(--muted);font-size:10.5px;margin-right:0!important}
+  .dlt.hi{color:#0f1420;background:var(--amber);font-weight:800;border-radius:4px;padding:1px 4px}
   .head-row{padding:0 10px 7px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;
     border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--card);z-index:2}
   .row{padding:7px 10px;border-bottom:1px solid rgba(42,53,80,.55);font-size:12.5px;transition:background .12s}
@@ -196,6 +198,14 @@
           <span class="lbl">Oran 2 (min / max)</span>
           <div class="pair"><input type="number" id="f2_min" value="0.00" step="0.01"><input type="number" id="f2_max" value="99.0" step="0.01"></div>
         </div>
+        <div class="fgroup">
+          <span class="lbl" style="color:var(--amber)">⚖️ Fark |1−2| (min / max)</span>
+          <div class="pair"><input type="number" id="fd_min" value="0.00" step="0.05"><input type="number" id="fd_max" value="99.0" step="0.05"></div>
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:11px;margin-top:7px">
+        <b>Fark |1−2|</b> : ev ve deplasman oranlarının farkı. Küçük fark = dengeli maç (beraberlik ihtimali yüksek).
+        Örnek: <b>0 – 0.80</b> yazarsan sadece dengeli maçlar kalır.
       </div>
     </div>
 
@@ -254,7 +264,7 @@
     </div>
 
     <div class="head-row">
-      <span></span><span>Maç</span><span>Oranlar</span><span>Gol ort. (A / Y)</span><span>Sonuç</span>
+      <span></span><span>Maç</span><span>Oranlar · Δ fark</span><span>Gol ort. (A / Y)</span><span>Sonuç</span>
     </div>
     <div id="log"><div class="empty">Verileri yapıştırıp “Sentezle” butonuna basın.</div></div>
   </div>
@@ -383,11 +393,11 @@ function copyHomeToAway(){
   renderList();
 }
 // varsayılanlar + sıfırlama
-const DEF={f1_min:'0.00',f1_max:'99.0',fx_min:'0.00',fx_max:'99.0',f2_min:'0.00',f2_max:'99.0',
+const DEF={f1_min:'0.00',f1_max:'99.0',fx_min:'0.00',fx_max:'99.0',f2_min:'0.00',f2_max:'99.0',fd_min:'0.00',fd_max:'99.0',
            hgs_min:'0.0',hgs_max:'9.9',hgc_min:'0.0',hgc_max:'9.9',
            ags_min:'0.0',ags_max:'9.9',agc_min:'0.0',agc_max:'9.9'};
 function resetFields(ids){ ids.forEach(id=>{ document.getElementById(id).value=DEF[id]; }); renderList(); }
-function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min','f2_max']); }
+function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min','f2_max','fd_min','fd_max']); }
 function resetGoals(){ resetFields(['hgs_min','hgs_max','hgc_min','hgc_max','ags_min','ags_max','agc_min','agc_max']); }
 
 function renderList() {
@@ -399,6 +409,8 @@ function renderList() {
     const f1_min=num('f1_min',0), f1_max=num('f1_max',99);
     const fx_min=num('fx_min',0), fx_max=num('fx_max',99);
     const f2_min=num('f2_min',0), f2_max=num('f2_max',99);
+    const fd_min=num('fd_min',0), fd_max=num('fd_max',99);
+    const farkAktif=(fd_min>0 || fd_max<99);
     const hgs_min=num('hgs_min',0), hgs_max=num('hgs_max',9.9);
     const hgc_min=num('hgc_min',0), hgc_max=num('hgc_max',9.9);
     const ags_min=num('ags_min',0), ags_max=num('ags_max',9.9);
@@ -441,6 +453,10 @@ function renderList() {
         if (m.od[1] < fx_min || m.od[1] > fx_max) return;
         if (m.od[2] < f2_min || m.od[2] > f2_max) return;
 
+        // 1 ile 2 arasındaki oran farkı (denge filtresi)
+        const fark = Math.abs(m.od[0] - m.od[2]);
+        if (fark < fd_min || fark > fd_max) return;
+
         // gol ortalaması filtresi — ev ve deplasman ayrı ayrı
         const hGS=parseFloat(hInfo.avgGS)||0, hGC=parseFloat(hInfo.avgGC)||0;
         const aGS=parseFloat(aInfo.avgGS)||0, aGC=parseFloat(aInfo.avgGC)||0;
@@ -468,7 +484,7 @@ function renderList() {
             <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
             + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
-            <span class="odds"><span><i>1</i>${m.od[0].toFixed(2)}</span><span><i>X</i>${m.od[1].toFixed(2)}</span><span><i>2</i>${m.od[2].toFixed(2)}</span></span>
+            <span class="odds"><span><i>1</i>${m.od[0].toFixed(2)}</span><span><i>X</i>${m.od[1].toFixed(2)}</span><span><i>2</i>${m.od[2].toFixed(2)}</span><span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
             <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
         </div>`;
