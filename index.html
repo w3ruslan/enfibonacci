@@ -103,6 +103,9 @@
   /* odak modu */
   .row.hit{background:var(--green-bg);box-shadow:inset 0 0 0 1px rgba(34,197,94,.45)} .row.hit .bar{background:var(--green)}
   .row.dim{background:transparent;opacity:.5} .row.dim .bar{background:var(--line)}
+  .odds span.fav{color:var(--amber);font-weight:800}
+  .odds span.fav i{color:var(--amber);opacity:.85}
+  .stat.bf .v{color:var(--amber)}
 
   .teams{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .teams b{font-weight:600}
@@ -163,6 +166,8 @@
         <option value="1">1 bitenleri vurgula</option>
         <option value="X">X bitenleri vurgula</option>
         <option value="2">2 bitenleri vurgula</option>
+        <option value="FAV">⭐ Favorinin kazandığı maçlar</option>
+        <option value="SUR">💥 Favorinin kaybettiği maçlar (sürpriz)</option>
       </select>
     </div>
 
@@ -261,6 +266,7 @@
       <div class="stat b1"><div class="k">1 bitti</div><div class="v" id="s_1">—</div><div class="s" id="s_1p">&nbsp;</div></div>
       <div class="stat bx"><div class="k">X bitti</div><div class="v" id="s_x">—</div><div class="s" id="s_xp">&nbsp;</div></div>
       <div class="stat b2"><div class="k">2 bitti</div><div class="v" id="s_2">—</div><div class="s" id="s_2p">&nbsp;</div></div>
+      <div class="stat bf"><div class="k">⭐ Favori kazandı</div><div class="v" id="s_f">—</div><div class="s" id="s_fp">&nbsp;</div></div>
     </div>
 
     <div class="head-row">
@@ -435,7 +441,7 @@ function renderList() {
           nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
     const golAktif = nHGS||nHGC||nAGS||nAGC;
 
-    let n1=0, nX=0, n2=0, futs=0, html='';
+    let n1=0, nX=0, n2=0, favW=0, favL=0, futs=0, html='';
 
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
@@ -470,9 +476,17 @@ function renderList() {
         if(m.fut) futs++;
         else if(m.r==='1') n1++; else if(m.r==='X') nX++; else if(m.r==='2') n2++;
 
+        // favori = en dusuk oran (esitlik varsa hepsi favori sayilir)
+        const enDusuk = Math.min(m.od[0], m.od[1], m.od[2]);
+        const favSonuclar = ['1','X','2'].filter((_,i)=>m.od[i] === enDusuk);
+        const favKazandi = !m.fut && favSonuclar.includes(m.r);
+        if(!m.fut){ if(favKazandi) favW++; else favL++; }
+
         let cls;
         if(m.fut) cls='fut';
         else if(filterFocus==='ALL') cls = (m.r==='1'?'a1':(m.r==='X'?'aX':(m.r==='2'?'a2':'')));
+        else if(filterFocus==='FAV') cls = (favKazandi ? 'hit' : 'dim');
+        else if(filterFocus==='SUR') cls = (favKazandi ? 'dim' : 'hit');
         else cls = (m.r===filterFocus ? 'hit' : 'dim');
 
         const resCls = m.r==='1'?'r1':(m.r==='X'?'rX':(m.r==='2'?'r2':'rP'));
@@ -484,7 +498,7 @@ function renderList() {
             <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
             + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
-            <span class="odds"><span><i>1</i>${m.od[0].toFixed(2)}</span><span><i>X</i>${m.od[1].toFixed(2)}</span><span><i>2</i>${m.od[2].toFixed(2)}</span><span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
+            <span class="odds">${[0,1,2].map(i=>`<span class="${m.od[i]===enDusuk?'fav':''}"><i>${['1','X','2'][i]}</i>${m.od[i].toFixed(2)}</span>`).join('')}<span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
             <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
         </div>`;
@@ -499,6 +513,7 @@ function renderList() {
     document.getElementById('s_1').textContent  = n1; document.getElementById('s_1p').textContent = pct(n1);
     document.getElementById('s_x').textContent  = nX; document.getElementById('s_xp').textContent = pct(nX);
     document.getElementById('s_2').textContent  = n2; document.getElementById('s_2p').textContent = pct(n2);
+    document.getElementById('s_f').textContent  = favW; document.getElementById('s_fp').textContent = pct(favW);
 }
 </script>
 </body>
