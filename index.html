@@ -107,6 +107,7 @@
   .odds span.fav i{color:var(--amber);opacity:.85}
   .stat.bf .v{color:var(--amber)}
   .stat.bu .v{color:var(--pink)}
+  .stat.bg{border-color:rgba(34,197,94,.35)}  .stat.bg .v{color:var(--green)}
   .odds span.und{color:var(--pink);font-weight:800}
   .odds span.und i{color:var(--pink);opacity:.85}
 
@@ -172,6 +173,9 @@
         <option value="FAV">⭐ Favorinin kazandığı maçlar</option>
         <option value="SUR">💥 Favorinin kaybettiği maçlar (sürpriz)</option>
         <option value="UND">🚀 En büyük oranın kazandığı maçlar (1–2 arası)</option>
+        <option value="O25">⚽ 2,5 üstü biten maçlar (3+ gol)</option>
+        <option value="O35">⚽ 3,5 üstü biten maçlar (4+ gol)</option>
+        <option value="O45">⚽ 4,5 üstü biten maçlar (5+ gol)</option>
       </select>
     </div>
 
@@ -272,6 +276,10 @@
       <div class="stat b2"><div class="k">2 bitti</div><div class="v" id="s_2">—</div><div class="s" id="s_2p">&nbsp;</div></div>
       <div class="stat bf"><div class="k">⭐ Favori kazandı</div><div class="v" id="s_f">—</div><div class="s" id="s_fp">&nbsp;</div></div>
       <div class="stat bu"><div class="k">🚀 Büyük oran kazandı</div><div class="v" id="s_u">—</div><div class="s" id="s_up">&nbsp;</div></div>
+      <div class="stat bg"><div class="k">⚽ 2,5 üstü</div><div class="v" id="s_o25">—</div><div class="s" id="s_o25p">&nbsp;</div></div>
+      <div class="stat bg"><div class="k">⚽ 3,5 üstü</div><div class="v" id="s_o35">—</div><div class="s" id="s_o35p">&nbsp;</div></div>
+      <div class="stat bg"><div class="k">⚽ 4,5 üstü</div><div class="v" id="s_o45">—</div><div class="s" id="s_o45p">&nbsp;</div></div>
+      <div class="stat bg"><div class="k">⚽ Maç başı gol</div><div class="v" id="s_gpm">—</div><div class="s">&nbsp;</div></div>
     </div>
 
     <div class="head-row">
@@ -446,7 +454,7 @@ function renderList() {
           nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
     const golAktif = nHGS||nHGC||nAGS||nAGC;
 
-    let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, futs=0, html='';
+    let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, o25=0, o35=0, o45=0, golToplam=0, futs=0, html='';
 
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
@@ -487,6 +495,20 @@ function renderList() {
         const favKazandi = !m.fut && favSonuclar.includes(m.r);
         if(!m.fut){ if(favKazandi) favW++; else favL++; }
 
+        // toplam gol
+        let toplamGol = null;
+        if(!m.fut && m.sc && m.sc!=='PENDING'){
+          const pp=String(m.sc).split(':');
+          const g1=parseInt(pp[0]), g2=parseInt(pp[1]);
+          if(!isNaN(g1)&&!isNaN(g2)) toplamGol=g1+g2;
+        }
+        if(toplamGol!==null){
+          golToplam+=toplamGol;
+          if(toplamGol>=3) o25++;
+          if(toplamGol>=4) o35++;
+          if(toplamGol>=5) o45++;
+        }
+
         // 1 ile 2 arasindaki EN BUYUK oran (beraberlik haric)
         const buyukOran = Math.max(m.od[0], m.od[2]);
         const undSonuclar = ['1','2'].filter((_,j)=>m.od[j===0?0:2] === buyukOran);
@@ -499,6 +521,9 @@ function renderList() {
         else if(filterFocus==='FAV') cls = (favKazandi ? 'hit' : 'dim');
         else if(filterFocus==='SUR') cls = (favKazandi ? 'dim' : 'hit');
         else if(filterFocus==='UND') cls = (undKazandi ? 'hit' : 'dim');
+        else if(filterFocus==='O25') cls = (toplamGol!==null && toplamGol>=3 ? 'hit' : 'dim');
+        else if(filterFocus==='O35') cls = (toplamGol!==null && toplamGol>=4 ? 'hit' : 'dim');
+        else if(filterFocus==='O45') cls = (toplamGol!==null && toplamGol>=5 ? 'hit' : 'dim');
         else cls = (m.r===filterFocus ? 'hit' : 'dim');
 
         const resCls = m.r==='1'?'r1':(m.r==='X'?'rX':(m.r==='2'?'r2':'rP'));
@@ -530,6 +555,10 @@ function renderList() {
     document.getElementById('s_2').textContent  = n2; document.getElementById('s_2p').textContent = pct(n2);
     document.getElementById('s_f').textContent  = favW; document.getElementById('s_fp').textContent = pct(favW);
     document.getElementById('s_u').textContent  = undW; document.getElementById('s_up').textContent = pct(undW);
+    document.getElementById('s_o25').textContent = o25; document.getElementById('s_o25p').textContent = pct(o25);
+    document.getElementById('s_o35').textContent = o35; document.getElementById('s_o35p').textContent = pct(o35);
+    document.getElementById('s_o45').textContent = o45; document.getElementById('s_o45p').textContent = pct(o45);
+    document.getElementById('s_gpm').textContent = tot>0 ? (golToplam/tot).toFixed(2) : '—';
 }
 </script>
 </body>
