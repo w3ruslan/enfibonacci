@@ -106,6 +106,9 @@
   .odds span.fav{color:var(--amber);font-weight:800}
   .odds span.fav i{color:var(--amber);opacity:.85}
   .stat.bf .v{color:var(--amber)}
+  .stat.bu .v{color:var(--pink)}
+  .odds span.und{color:var(--pink);font-weight:800}
+  .odds span.und i{color:var(--pink);opacity:.85}
 
   .teams{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .teams b{font-weight:600}
@@ -168,6 +171,7 @@
         <option value="2">2 bitenleri vurgula</option>
         <option value="FAV">⭐ Favorinin kazandığı maçlar</option>
         <option value="SUR">💥 Favorinin kaybettiği maçlar (sürpriz)</option>
+        <option value="UND">🚀 En büyük oranın kazandığı maçlar (1–2 arası)</option>
       </select>
     </div>
 
@@ -267,6 +271,7 @@
       <div class="stat bx"><div class="k">X bitti</div><div class="v" id="s_x">—</div><div class="s" id="s_xp">&nbsp;</div></div>
       <div class="stat b2"><div class="k">2 bitti</div><div class="v" id="s_2">—</div><div class="s" id="s_2p">&nbsp;</div></div>
       <div class="stat bf"><div class="k">⭐ Favori kazandı</div><div class="v" id="s_f">—</div><div class="s" id="s_fp">&nbsp;</div></div>
+      <div class="stat bu"><div class="k">🚀 Büyük oran kazandı</div><div class="v" id="s_u">—</div><div class="s" id="s_up">&nbsp;</div></div>
     </div>
 
     <div class="head-row">
@@ -441,7 +446,7 @@ function renderList() {
           nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
     const golAktif = nHGS||nHGC||nAGS||nAGC;
 
-    let n1=0, nX=0, n2=0, favW=0, favL=0, futs=0, html='';
+    let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, futs=0, html='';
 
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
@@ -482,11 +487,18 @@ function renderList() {
         const favKazandi = !m.fut && favSonuclar.includes(m.r);
         if(!m.fut){ if(favKazandi) favW++; else favL++; }
 
+        // 1 ile 2 arasindaki EN BUYUK oran (beraberlik haric)
+        const buyukOran = Math.max(m.od[0], m.od[2]);
+        const undSonuclar = ['1','2'].filter((_,j)=>m.od[j===0?0:2] === buyukOran);
+        const undKazandi = !m.fut && undSonuclar.includes(m.r);
+        if(!m.fut && undKazandi) undW++;
+
         let cls;
         if(m.fut) cls='fut';
         else if(filterFocus==='ALL') cls = (m.r==='1'?'a1':(m.r==='X'?'aX':(m.r==='2'?'a2':'')));
         else if(filterFocus==='FAV') cls = (favKazandi ? 'hit' : 'dim');
         else if(filterFocus==='SUR') cls = (favKazandi ? 'dim' : 'hit');
+        else if(filterFocus==='UND') cls = (undKazandi ? 'hit' : 'dim');
         else cls = (m.r===filterFocus ? 'hit' : 'dim');
 
         const resCls = m.r==='1'?'r1':(m.r==='X'?'rX':(m.r==='2'?'r2':'rP'));
@@ -498,7 +510,10 @@ function renderList() {
             <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
             + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
-            <span class="odds">${[0,1,2].map(i=>`<span class="${m.od[i]===enDusuk?'fav':''}"><i>${['1','X','2'][i]}</i>${m.od[i].toFixed(2)}</span>`).join('')}<span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
+            <span class="odds">${[0,1,2].map(i=>{
+                const und = (filterFocus==='UND' && i!==1 && m.od[i]===buyukOran);
+                return `<span class="${und?'und':(m.od[i]===enDusuk?'fav':'')}"><i>${['1','X','2'][i]}</i>${m.od[i].toFixed(2)}</span>`;
+              }).join('')}<span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
             <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
         </div>`;
@@ -514,6 +529,7 @@ function renderList() {
     document.getElementById('s_x').textContent  = nX; document.getElementById('s_xp').textContent = pct(nX);
     document.getElementById('s_2').textContent  = n2; document.getElementById('s_2p').textContent = pct(n2);
     document.getElementById('s_f').textContent  = favW; document.getElementById('s_fp').textContent = pct(favW);
+    document.getElementById('s_u').textContent  = undW; document.getElementById('s_up').textContent = pct(undW);
 }
 </script>
 </body>
