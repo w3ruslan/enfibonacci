@@ -108,9 +108,14 @@
   .stat.bf .v{color:var(--amber)}
   .stat.bu .v{color:var(--pink)}
   .stat.bg{border-color:rgba(34,197,94,.35)}  .stat.bg .v{color:var(--green)}
-  .rnd{font-style:normal;display:inline-block;min-width:26px;text-align:center;margin-right:7px;
-    padding:1px 5px;border-radius:6px;background:var(--card2);border:1px solid var(--line);
-    color:var(--muted);font-size:10px;font-weight:800;font-family:ui-monospace,Menlo,monospace}
+  .roundhead{display:grid;grid-template-columns:6px minmax(210px,1fr) 248px 140px 46px;gap:10px;
+    align-items:center;padding:8px 10px;margin-top:12px;background:var(--card2);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:8px 8px 0 0}
+  .roundhead:first-child{margin-top:0}
+  .roundhead .rt{grid-column:2;font-size:11.5px;font-weight:800;letter-spacing:.9px;color:var(--ink);
+    text-transform:uppercase}
+  .roundhead .ro{grid-column:3;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .roundhead .ro i{font-style:normal;text-align:center;font-size:10.5px;font-weight:700;color:var(--muted)}
   .odds span.f12{color:var(--blue);font-weight:800}
   .odds span.f12 i{color:var(--blue);opacity:.85}
   .odds span.und{color:var(--pink);font-weight:800}
@@ -498,7 +503,7 @@ function renderList() {
           nAGS=nar(ags_min,ags_max), nAGC=nar(agc_min,agc_max);
     const golAktif = nHGS||nHGC||nAGS||nAGC;
 
-    let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, f12W=0, o25=0, o35=0, o45=0, golToplam=0, futs=0, html='';
+    let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, f12W=0, o25=0, o35=0, o45=0, golToplam=0, futs=0, html='', sonRound=null;
 
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
@@ -581,9 +586,13 @@ function renderList() {
 
         const gv=(val,on)=>`<span class="v${on?' hi':''}">${val}</span>`;
 
+        if(m.rnd!=null && m.rnd!==sonRound){
+            sonRound=m.rnd;
+            html += `<div class="roundhead"><span class="rt">${m.rnd}. ROUND</span><span class="ro"><i>1</i><i>X</i><i>2</i></span></div>`;
+        }
         html += `<div class="row ${cls}${golAktif?' hasgoal':''}">
             <span class="bar"></span>
-            <span class="teams">${m.rnd!=null?`<i class="rnd">R${m.rnd}</i>`:''}<b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
+            <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
             + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
             <span class="odds">${[0,1,2].map(i=>{
