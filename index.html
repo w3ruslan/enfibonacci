@@ -399,11 +399,22 @@ function kronolojikSirala(list){
     const hafta = list.some(m => m.rnd != null);
     const tarih = list.some(m => m.trh != null);
     if (!hafta && !tarih) return list;
+
+    /* Liste yeniden eskiye mi yapistirilmis? Tarih ve hafta dizilimine bak.
+       Oyleyse AYNI GUNDEKI maclarda da sira terstir -> esitlikte ters cevir. */
+    let ters = 0, duz = 0;
+    for (let i = 1; i < list.length; i++){
+        const a = list[i-1], b = list[i];
+        if (a.trh != null && b.trh != null && a.trh !== b.trh) (b.trh < a.trh) ? ters++ : duz++;
+        else if (a.rnd != null && b.rnd != null && a.rnd !== b.rnd) (b.rnd < a.rnd) ? ters++ : duz++;
+    }
+    const tersYapistirma = ters > duz;
+
     const kopya = list.slice();
     kopya.sort((a,b) => {
         if (hafta && a.rnd != null && b.rnd != null && a.rnd !== b.rnd) return a.rnd - b.rnd;
         if (tarih && a.trh != null && b.trh != null && a.trh !== b.trh) return a.trh - b.trh;
-        return a.sira - b.sira;
+        return tersYapistirma ? (b.sira - a.sira) : (a.sira - b.sira);
     });
     return kopya;
 }
