@@ -348,6 +348,15 @@ function roundNo(t){
     return n ? parseInt(n) : 0;
 }
 
+// "14.09.2025", "13.09.", "05.10.2025" gibi tarihleri yakala -> siralanabilir sayi
+function tarihNo(satir){
+    let m = satir.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+    if (m) return (+m[3])*10000 + (+m[2])*100 + (+m[1]);
+    m = satir.match(/(\d{1,2})\.(\d{1,2})\.(?!\d)/);
+    if (m) return (+m[2])*100 + (+m[1]);      // yil yok: ay/gun ile sirala
+    return null;
+}
+
 function parseMatches(raw, isFixture) {
     const lines = raw.split(/\r?\n/);
     const results = [];
@@ -371,21 +380,37 @@ function parseMatches(raw, isFixture) {
                     let s = score.split(':');
                     actual = (parseInt(s[0]) === parseInt(s[1])) ? 'X' : (parseInt(s[0]) > parseInt(s[1]) ? '1' : '2');
                 }
-                results.push({ h: home, a: away, sc: score, od: [o1, ox, o2], r: actual, fut: isFixture, rnd: aktifRound });
+                results.push({ h: home, a: away, sc: score, od: [o1, ox, o2], r: actual, fut: isFixture,
+                               rnd: aktifRound, trh: tarihNo(cleanLine), sira: results.length });
             }
         }
     });
     return results;
 }
 
+/* Eskiden yeniye sirala: once hafta numarasi, sonra tarih.
+   Ikisi de yoksa yapistirma sirasi korunur. */
+function kronolojikSirala(list){
+    const hafta = list.some(m => m.rnd != null);
+    const tarih = list.some(m => m.trh != null);
+    if (!hafta && !tarih) return list;
+    const kopya = list.slice();
+    kopya.sort((a,b) => {
+        if (hafta && a.rnd != null && b.rnd != null && a.rnd !== b.rnd) return a.rnd - b.rnd;
+        if (tarih && a.trh != null && b.trh != null && a.trh !== b.trh) return a.trh - b.trh;
+        return a.sira - b.sira;
+    });
+    return kopya;
+}
+
 function superParse() {
     const pastRaw = document.getElementById('pastInput').value;
     const fixtureRaw = document.getElementById('fixtureInput').value;
     teamSet.clear();
-    const pastMatches = parseMatches(pastRaw, false);
+    const pastMatches = kronolojikSirala(parseMatches(pastRaw, false));
     calculateStandings(pastMatches);
-    const fixtureMatches = parseMatches(fixtureRaw, true);
-    allMatches = [...fixtureMatches.reverse(), ...pastMatches];
+    const fixtureMatches = kronolojikSirala(parseMatches(fixtureRaw, true));
+    allMatches = [...fixtureMatches, ...pastMatches];
     renderTeamList();
     renderList();
 }
