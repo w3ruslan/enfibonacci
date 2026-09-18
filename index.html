@@ -333,10 +333,16 @@
           <span class="lbl">Kaçarlı gruplansın? (0 = kapalı)</span>
           <input type="number" id="grup_n" value="0" min="0" max="999" step="1" oninput="renderList()">
         </div>
+        <div class="fgroup">
+          <span class="lbl" style="color:var(--amber)">🔁 Maksimum grup sayısı (0 = sınırsız)</span>
+          <input type="number" id="grup_max" value="0" min="0" max="99" step="1" oninput="renderList()">
+        </div>
       </div>
       <div style="color:var(--muted);font-size:11px;margin-top:7px">
         Örnek: <b>7</b> yazarsan liste baştan sona 7'şer maçlık çerçevelere bölünür; her çerçeve farklı renktedir
-        ve etiketinde o grupta kaç maçın <b>X</b> bittiği yazar.
+        ve etiketinde o grupta kaç maçın <b>X</b> bittiği yazar.<br>
+        <b>Maksimum grup sayısı</b> : numaralandırma buraya gelince başa döner. <b>5</b> yazarsan gruplar
+        1-2-3-4-5 → 1-2-3-4-5 → … diye tekrar eder; aynı numaralı gruplar aynı renkte olur.
       </div>
     </div>
 
@@ -543,15 +549,17 @@ function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min',
 function resetGoals(){ resetFields(['hgs_min','hgs_max','hgc_min','hgc_max','ags_min','ags_max','agc_min','agc_max']); }
 
 // gruplandırma: listeyi baştan sona n'erlik çerçevelere böler, her çerçeve farklı renk
-function gruplaHTML(parcalar, n){
+function gruplaHTML(parcalar, n, maks){
     if(!n || n<2) return parcalar.map(p=>p.h).join('');
 
     let out='', govde='', sayac=0, xSay=0, grupNo=0;
 
     const kapat = () => {
         if(!sayac) return;
-        out += `<div class="grp grp${grupNo%8}">`
-             + `<span class="gno">GRUP ${grupNo+1} <em>· ${sayac} maç`
+        // maksimum grup sayısı verilmişse numara oraya gelince başa döner
+        const no = (maks && maks>0) ? (grupNo % maks) : grupNo;
+        out += `<div class="grp grp${no%8}">`
+             + `<span class="gno">GRUP ${no+1} <em>· ${sayac} maç`
              + (xSay ? ` · ${xSay} X` : '') + `</em></span>`
              + govde + `</div>`;
         govde=''; sayac=0; xSay=0; grupNo++;
@@ -717,11 +725,14 @@ function renderList() {
         </div>`});
     });
 
-    const grupN = Math.max(0, Math.floor(num('grup_n',0)) || 0);
-    html = gruplaHTML(parcalar, grupN);
+    const grupN   = Math.max(0, Math.floor(num('grup_n',0))   || 0);
+    const grupMax = Math.max(0, Math.floor(num('grup_max',0)) || 0);
+    html = gruplaHTML(parcalar, grupN, grupMax);
 
     const gNote=document.getElementById('grupNote');
-    if(gNote) gNote.textContent = grupN>1 ? `— ${grupN}'erli` : '';
+    if(gNote) gNote.textContent = grupN>1
+        ? `— ${grupN}'erli` + (grupMax>0 ? ` · ${grupMax} grupta bir başa dönüyor` : '')
+        : '';
 
     log.innerHTML = html || '<div class="empty">Bu filtrelerle eşleşen maç yok.</div>';
 
