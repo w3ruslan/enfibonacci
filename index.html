@@ -337,12 +337,18 @@
           <span class="lbl" style="color:var(--amber)">🔁 Maksimum grup sayısı (0 = sınırsız)</span>
           <input type="number" id="grup_max" value="0" min="0" max="99" step="1" oninput="renderList()">
         </div>
+        <div class="fgroup">
+          <span class="lbl" style="color:var(--green)">🎯 Sadece seçilen grubu göster</span>
+          <select id="grup_sec" onchange="renderList()"><option value="0">Hepsi</option></select>
+        </div>
       </div>
       <div style="color:var(--muted);font-size:11px;margin-top:7px">
         Örnek: <b>7</b> yazarsan liste baştan sona 7'şer maçlık çerçevelere bölünür; her çerçeve farklı renktedir
         ve etiketinde o grupta kaç maçın <b>X</b> bittiği yazar.<br>
         <b>Maksimum grup sayısı</b> : numaralandırma buraya gelince başa döner. <b>5</b> yazarsan gruplar
-        1-2-3-4-5 → 1-2-3-4-5 → … diye tekrar eder; aynı numaralı gruplar aynı renkte olur.
+        1-2-3-4-5 → 1-2-3-4-5 → … diye tekrar eder; aynı numaralı gruplar aynı renkte olur.<br>
+        <b>Sadece seçilen grubu göster</b> : maksimum <b>6</b> iken listeden <b>3</b> seçersen sadece 3 numaralı
+        çerçeveler kalır, diğerleri gizlenir. Önce maksimum grup sayısını yazman gerekiyor.
       </div>
     </div>
 
@@ -549,19 +555,23 @@ function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min',
 function resetGoals(){ resetFields(['hgs_min','hgs_max','hgc_min','hgc_max','ags_min','ags_max','agc_min','agc_max']); }
 
 // gruplandırma: listeyi baştan sona n'erlik çerçevelere böler, her çerçeve farklı renk
-function gruplaHTML(parcalar, n, maks){
-    if(!n || n<2) return parcalar.map(p=>p.h).join('');
+function gruplaHTML(parcalar, n, maks, sec){
+    if(!n || n<2) return {html:parcalar.map(p=>p.h).join(''), grup:0, mac:0, x:0};
 
-    let out='', govde='', sayac=0, xSay=0, grupNo=0;
+    let out='', govde='', sayac=0, xSay=0, grupNo=0, gGrup=0, gMac=0, gX=0;
 
     const kapat = () => {
         if(!sayac) return;
         // maksimum grup sayısı verilmişse numara oraya gelince başa döner
         const no = (maks && maks>0) ? (grupNo % maks) : grupNo;
-        out += `<div class="grp grp${no%8}">`
-             + `<span class="gno">GRUP ${no+1} <em>· ${sayac} maç`
-             + (xSay ? ` · ${xSay} X` : '') + `</em></span>`
-             + govde + `</div>`;
+        // sadece seçilen numaralı gruplar gösteriliyorsa diğerlerini atla
+        if(!sec || sec === no+1){
+            out += `<div class="grp grp${no%8}">`
+                 + `<span class="gno">GRUP ${no+1} <em>· ${sayac} maç`
+                 + (xSay ? ` · ${xSay} X` : '') + `</em></span>`
+                 + govde + `</div>`;
+            gGrup++; gMac+=sayac; gX+=xSay;
+        }
         govde=''; sayac=0; xSay=0; grupNo++;
     };
 
@@ -575,8 +585,25 @@ function gruplaHTML(parcalar, n, maks){
     });
     kapat();
     // gruba girmemiş artık varsa (sadece round başlığı kalmışsa) sona ekle
-    if(govde) out += govde;
-    return out;
+    if(govde && !sec) out += govde;
+    return {html:out, grup:gGrup, mac:gMac, x:gX};
+}
+
+// "sadece seçilen grubu göster" listesini maksimum grup sayısına göre doldurur
+function grupSecGuncelle(maks){
+    const sel=document.getElementById('grup_sec');
+    if(!sel) return 0;
+    const adet = (maks && maks>0) ? maks : 0;
+    if(sel.dataset.adet !== String(adet)){
+        const eski = parseInt(sel.value)||0;
+        let h='<option value="0">Hepsi</option>';
+        for(let i=1;i<=adet;i++) h += `<option value="${i}">${i} numaralı gruplar</option>`;
+        sel.innerHTML = h;
+        sel.dataset.adet = String(adet);
+        sel.value = (eski>0 && eski<=adet) ? String(eski) : '0';
+    }
+    sel.disabled = (adet===0);
+    return parseInt(sel.value)||0;
 }
 
 function grupAyarla(n){
@@ -727,11 +754,15 @@ function renderList() {
 
     const grupN   = Math.max(0, Math.floor(num('grup_n',0))   || 0);
     const grupMax = Math.max(0, Math.floor(num('grup_max',0)) || 0);
-    html = gruplaHTML(parcalar, grupN, grupMax);
+    const grupSec = grupSecGuncelle(grupMax);
+    const gr = gruplaHTML(parcalar, grupN, grupMax, grupSec);
+    html = gr.html;
 
     const gNote=document.getElementById('grupNote');
     if(gNote) gNote.textContent = grupN>1
-        ? `— ${grupN}'erli` + (grupMax>0 ? ` · ${grupMax} grupta bir başa dönüyor` : '')
+        ? `— ${grupN}'erli`
+          + (grupMax>0 ? ` · ${grupMax} grupta bir başa dönüyor` : '')
+          + (grupSec>0 ? ` · sadece ${grupSec} numaralılar: ${gr.grup} çerçeve, ${gr.mac} maç, ${gr.x} X` : '')
         : '';
 
     log.innerHTML = html || '<div class="empty">Bu filtrelerle eşleşen maç yok.</div>';
