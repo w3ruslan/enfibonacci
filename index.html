@@ -135,6 +135,25 @@
     text-transform:uppercase}
   .roundhead .ro{grid-column:3;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
   .roundhead .ro i{font-style:normal;text-align:center;font-size:10.5px;font-weight:700;color:var(--muted)}
+  /* gruplandırma çerçeveleri */
+  .grp{border:2px solid var(--grc);border-radius:12px;padding:8px 8px 2px;margin:18px 0 0;
+    background:var(--grbg);position:relative}
+  .grp:first-child{margin-top:8px}
+  .grp .gno{position:absolute;top:-10px;left:12px;background:var(--grc);color:#0f1420;
+    font-size:10px;font-weight:800;letter-spacing:.4px;padding:2px 8px;border-radius:99px;
+    white-space:nowrap}
+  .grp .gno em{font-style:normal;opacity:.75;font-weight:700}
+  .grp .row:last-child{border-bottom:none}
+  .grp .roundhead{margin-top:6px}
+  .grp .roundhead:first-of-type{margin-top:0}
+  .grp0{--grc:#6d86f0;--grbg:rgba(109,134,240,.07)}
+  .grp1{--grc:#22c55e;--grbg:rgba(34,197,94,.07)}
+  .grp2{--grc:#f5b942;--grbg:rgba(245,185,66,.07)}
+  .grp3{--grc:#f19bd0;--grbg:rgba(241,155,208,.07)}
+  .grp4{--grc:#7fb3ff;--grbg:rgba(127,179,255,.07)}
+  .grp5{--grc:#ff6b6b;--grbg:rgba(255,107,107,.07)}
+  .grp6{--grc:#2dd4bf;--grbg:rgba(45,212,191,.07)}
+  .grp7{--grc:#c084fc;--grbg:rgba(192,132,252,.07)}
   .odds span.f12{color:var(--blue);font-weight:800}
   .odds span.f12 i{color:var(--blue);opacity:.85}
   .odds span.und{color:var(--pink);font-weight:800}
@@ -296,6 +315,29 @@
       <input type="text" id="teamSearch" class="teamsearch" placeholder="Takım ara…" oninput="filterTeamChips()">
       <div id="teamList" class="teamgrid"></div>
       <div class="teamnote" id="teamNote">Hiç takım seçilmezse filtre çalışmaz — tüm maçlar listelenir.</div>
+    </div>
+
+    <div class="subblock">
+      <div class="subhead">
+        <span class="lbl" style="margin:0;min-height:auto">🔲 Gruplandırma <span id="grupNote" style="color:var(--accent)"></span></span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="mini" onclick="grupAyarla(4)">4'er</button>
+          <button class="mini" onclick="grupAyarla(5)">5'er</button>
+          <button class="mini" onclick="grupAyarla(7)">7'şer</button>
+          <button class="mini" onclick="grupAyarla(10)">10'ar</button>
+          <button class="mini" onclick="grupAyarla(0)">↺ Kapat</button>
+        </span>
+      </div>
+      <div class="filters">
+        <div class="fgroup">
+          <span class="lbl">Kaçarlı gruplansın? (0 = kapalı)</span>
+          <input type="number" id="grup_n" value="0" min="0" max="999" step="1" oninput="renderList()">
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:11px;margin-top:7px">
+        Örnek: <b>7</b> yazarsan liste baştan sona 7'şer maçlık çerçevelere bölünür; her çerçeve farklı renktedir
+        ve etiketinde o grupta kaç maçın <b>X</b> bittiği yazar.
+      </div>
     </div>
 
     <button class="b-apply" onclick="renderList()">🔎 Filtreleri uygula</button>
@@ -500,6 +542,42 @@ function resetFields(ids){ ids.forEach(id=>{ document.getElementById(id).value=D
 function resetOdds(){ resetFields(['f1_min','f1_max','fx_min','fx_max','f2_min','f2_max','fd_min','fd_max']); }
 function resetGoals(){ resetFields(['hgs_min','hgs_max','hgc_min','hgc_max','ags_min','ags_max','agc_min','agc_max']); }
 
+// gruplandırma: listeyi baştan sona n'erlik çerçevelere böler, her çerçeve farklı renk
+function gruplaHTML(parcalar, n){
+    if(!n || n<2) return parcalar.map(p=>p.h).join('');
+
+    let out='', govde='', sayac=0, xSay=0, grupNo=0;
+
+    const kapat = () => {
+        if(!sayac) return;
+        out += `<div class="grp grp${grupNo%8}">`
+             + `<span class="gno">GRUP ${grupNo+1} <em>· ${sayac} maç`
+             + (xSay ? ` · ${xSay} X` : '') + `</em></span>`
+             + govde + `</div>`;
+        govde=''; sayac=0; xSay=0; grupNo++;
+    };
+
+    parcalar.forEach(p => {
+        govde += p.h;
+        if(p.t==='row'){
+            sayac++;
+            if(p.x) xSay++;
+            if(sayac>=n) kapat();
+        }
+    });
+    kapat();
+    // gruba girmemiş artık varsa (sadece round başlığı kalmışsa) sona ekle
+    if(govde) out += govde;
+    return out;
+}
+
+function grupAyarla(n){
+    const el=document.getElementById('grup_n');
+    if(!el) return;
+    el.value = n;
+    renderList();
+}
+
 function renderList() {
     const log = document.getElementById('log');
     const filterActual = document.getElementById('filter_actual').value;
@@ -536,6 +614,7 @@ function renderList() {
     const golAktif = nHGS||nHGC||nAGS||nAGC;
 
     let n1=0, nX=0, n2=0, favW=0, favL=0, undW=0, f12W=0, o25=0, o35=0, o45=0, golToplam=0, futs=0, html='', sonRound=null;
+    const parcalar=[];   // gruplandırma için: {t:'head'|'row', h:HTML, x:berabere mi}
 
     allMatches.forEach(m => {
         let hInfo = leagueTable[m.h] || {rank:0, avgGS:'0.0', avgGC:'0.0'};
@@ -620,9 +699,9 @@ function renderList() {
 
         if(m.rnd!=null && m.rnd!==sonRound){
             sonRound=m.rnd;
-            html += `<div class="roundhead"><span class="rt">${m.rnd}. ROUND</span><span class="ro"><i>1</i><i>X</i><i>2</i></span></div>`;
+            parcalar.push({t:'head', h:`<div class="roundhead"><span class="rt">${m.rnd}. ROUND</span><span class="ro"><i>1</i><i>X</i><i>2</i></span></div>`});
         }
-        html += `<div class="row ${cls}${golAktif?' hasgoal':''}">
+        parcalar.push({t:'row', x:(m.r==='X'), h:`<div class="row ${cls}${golAktif?' hasgoal':''}">
             <span class="bar"></span>
             <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
@@ -635,8 +714,14 @@ function renderList() {
               }).join('')}<span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
             <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
-        </div>`;
+        </div>`});
     });
+
+    const grupN = Math.max(0, Math.floor(num('grup_n',0)) || 0);
+    html = gruplaHTML(parcalar, grupN);
+
+    const gNote=document.getElementById('grupNote');
+    if(gNote) gNote.textContent = grupN>1 ? `— ${grupN}'erli` : '';
 
     log.innerHTML = html || '<div class="empty">Bu filtrelerle eşleşen maç yok.</div>';
 
