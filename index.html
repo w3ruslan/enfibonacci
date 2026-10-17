@@ -369,7 +369,7 @@
     </div>
 
     <div class="head-row">
-      <span></span><span>Maç</span><span>Oranlar · Δ fark</span><span>Gol ort. (A / Y)</span><span>Sonuç</span>
+      <span></span><span>Maç</span><span>Oranlar · Δ fark</span><span>Maça kadar gol (A / Y)</span><span>Sonuç</span>
     </div>
     <div id="log"><div class="empty">Verileri yapıştırıp “Sentezle” butonuna basın.</div></div>
   </div>
@@ -494,6 +494,22 @@ function kronolojikSirala(list){
     return ters > duz ? list.slice().reverse() : list;
 }
 
+/* Her maca kadar (o mac haric) takimin attigi / yedigi toplam gol.
+   Gecmis maclar eskiden yeniye gezilir; fikstur maclari tum sezon toplamini alir. */
+function macaKadarGoller(past, fixtures){
+    const t = {};
+    const al = k => (t[k] = t[k] || { at: 0, ye: 0 });
+    past.forEach(m => {
+        const h = al(m.h), a = al(m.a);
+        m.oH = { at: h.at, ye: h.ye }; m.oA = { at: a.at, ye: a.ye };
+        if (m.sc && m.sc !== "PENDING") {
+            const s = m.sc.split(':'), hG = parseInt(s[0]), aG = parseInt(s[1]);
+            if (!isNaN(hG) && !isNaN(aG)) { h.at += hG; h.ye += aG; a.at += aG; a.ye += hG; }
+        }
+    });
+    fixtures.forEach(m => { const h = al(m.h), a = al(m.a); m.oH = { at: h.at, ye: h.ye }; m.oA = { at: a.at, ye: a.ye }; });
+}
+
 function superParse() {
     const pastRaw = document.getElementById('pastInput').value;
     const fixtureRaw = document.getElementById('fixtureInput').value;
@@ -501,6 +517,7 @@ function superParse() {
     const pastMatches = kronolojikSirala(parseMatches(pastRaw, false));
     calculateStandings(pastMatches);
     const fixtureMatches = kronolojikSirala(parseMatches(fixtureRaw, true));
+    macaKadarGoller(pastMatches, fixtureMatches);
     allMatches = [...fixtureMatches, ...pastMatches];
     renderTeamList();
     renderList();
@@ -747,7 +764,7 @@ function renderList() {
                 const cls2 = und?'und':(f12?'f12':(m.od[i]===enDusuk?'fav':''));
                 return `<span class="${cls2}"><i>${['1','X','2'][i]}</i>${m.od[i].toFixed(2)}</span>`;
               }).join('')}<span class="dlt${farkAktif?' hi':''}">Δ${fark.toFixed(2)}</span></span>
-            <span class="gs">${gv(hInfo.avgGS,nHGS)}/${gv(hInfo.avgGC,nHGC)} · ${gv(aInfo.avgGS,nAGS)}/${gv(aInfo.avgGC,nAGC)}</span>
+            <span class="gs" title="Bu maça kadar atılan / yenen toplam gol">${gv(m.oH.at,nHGS)}/${gv(m.oH.ye,nHGC)} · ${gv(m.oA.at,nAGS)}/${gv(m.oA.ye,nAGC)}</span>
             <span class="res ${resCls}">${m.r==='PENDING'?'·':m.r}</span>
         </div>`});
     });
