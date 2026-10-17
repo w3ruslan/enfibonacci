@@ -207,6 +207,10 @@
   .teams{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .teams b{font-weight:600}
   .rk{color:var(--muted);font-size:10.5px;font-style:normal;margin-left:3px}
+  /* son beraberlik: kac mac once (o maca kadar) */
+  .xg{font-style:normal;font-size:10px;font-weight:700;color:var(--muted);margin-left:4px;
+    border:1px solid var(--line);border-radius:4px;padding:0 3px;font-family:ui-monospace,Menlo,monospace}
+  .xg.uzun{color:var(--amber);border-color:var(--amber)}
   .sc{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:6px;
     padding:0 6px;margin:0 6px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:700}
   .vs{color:var(--muted);margin:0 5px}
@@ -547,16 +551,29 @@ function kronolojikSirala(list){
    Gecmis maclar eskiden yeniye gezilir; fikstur maclari tum sezon toplamini alir. */
 function macaKadarGoller(past, fixtures){
     const t = {};
-    const al = k => (t[k] = t[k] || { at: 0, ye: 0 });
+    // x: son beraberlikten beri oynanan mac sayisi (null = hic berabere kalmadi), n: oynanan mac
+    const al = k => (t[k] = t[k] || { at: 0, ye: 0, x: null, n: 0 });
+    const durum = o => ({ at: o.at, ye: o.ye, x: o.x, n: o.n });
     past.forEach(m => {
         const h = al(m.h), a = al(m.a);
-        m.oH = { at: h.at, ye: h.ye }; m.oA = { at: a.at, ye: a.ye };
+        m.oH = durum(h); m.oA = durum(a);
         if (m.sc && m.sc !== "PENDING") {
             const s = m.sc.split(':'), hG = parseInt(s[0]), aG = parseInt(s[1]);
-            if (!isNaN(hG) && !isNaN(aG)) { h.at += hG; h.ye += aG; a.at += aG; a.ye += hG; }
+            if (!isNaN(hG) && !isNaN(aG)) {
+                h.at += hG; h.ye += aG; a.at += aG; a.ye += hG; h.n++; a.n++;
+                for (const o of [h, a]) o.x = (hG === aG) ? 0 : (o.x === null ? null : o.x + 1);
+            }
         }
     });
-    fixtures.forEach(m => { const h = al(m.h), a = al(m.a); m.oH = { at: h.at, ye: h.ye }; m.oA = { at: a.at, ye: a.ye }; });
+    fixtures.forEach(m => { const h = al(m.h), a = al(m.a); m.oH = durum(h); m.oA = durum(a); });
+}
+
+// takim adinin yaninda: son beraberlik kac mac once (X1 = bir onceki maci berabere)
+function xEtiket(o){
+    if (!o || !o.n) return '';
+    if (o.x === null) return `<i class="xg uzun" title="Bu maça kadar ${o.n} maçta hiç berabere kalmadı">X–</i>`;
+    const k = o.x + 1;
+    return `<i class="xg${k >= 6 ? ' uzun' : ''}" title="Son beraberlik ${k} maç önce">X${k}</i>`;
 }
 
 function superParse() {
@@ -804,9 +821,9 @@ function renderList() {
         }
         parcalar.push({t:'row', x:(m.r==='X'), h:`<div class="row ${cls}${golAktif?' hasgoal':''}">
             <span class="bar"></span>
-            <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>`
+            <span class="teams"><b>${esc(m.h)}</b><i class="rk">#${hInfo.rank||'-'}</i>${xEtiket(m.oH)}`
             + (m.sc==='PENDING' ? '<span class="vs">–</span>' : `<span class="sc">${esc(m.sc)}</span>`)
-            + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i></span>
+            + `<b>${esc(m.a)}</b><i class="rk">#${aInfo.rank||'-'}</i>${xEtiket(m.oA)}</span>
             <span class="odds">${[0,1,2].map(i=>{
                 const und = (filterFocus==='UND' && i!==1 && m.od[i]===buyukOran);
                 const f12 = (filterFocus==='FAV12' && i!==1 && m.od[i]===kucukOran);
