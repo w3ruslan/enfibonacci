@@ -26,6 +26,51 @@
     --pink:#b3216d;  --pink-bg:rgba(179,33,109,.10);
     --parlama:rgba(59,82,201,.10);
   }
+  /* --- E-KAĞIT TEMASI (investing sitesiyle aynı: kâğıt zemin, mürekkep yazı, soluk renkler) --- */
+  html[data-tema="kagit"]{
+    --bg:#d6cdbd; --card:#d6cdbd; --card2:#dcd4c7; --line:#b8ab93;
+    --ink:#1c1c1a; --muted:#696153; --accent:#1c1c1a; --accent2:#3a3833;
+    --green:#35614a; --green-bg:rgba(53,97,74,.14);
+    --red:#8c3a31;
+    --amber:#7d5a17; --amber-bg:rgba(125,90,23,.13);
+    --blue:#34536e;  --blue-bg:rgba(52,83,110,.11);
+    --pink:#8c3a31;  --pink-bg:rgba(140,58,49,.11);
+    --parlama:transparent;
+  }
+  html[data-tema="kagit"] body{
+    font-family:-apple-system,BlinkMacSystemFont,"Trebuchet MS","Segoe UI",Roboto,sans-serif;
+    background-color:var(--bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  html[data-tema="kagit"] .card{background:transparent;border-radius:10px}
+  html[data-tema="kagit"] .head-row{background:var(--bg)}
+  html[data-tema="kagit"] button{border-radius:6px}
+  html[data-tema="kagit"] button:hover{background:#cabeaa;border-color:var(--ink)}
+  html[data-tema="kagit"] .b-main,html[data-tema="kagit"] .b-apply{background:var(--ink);color:#d6cdbd;border-color:var(--ink);box-shadow:none}
+  html[data-tema="kagit"] .b-main:hover,html[data-tema="kagit"] .b-apply:hover{background:#3a3833;border-color:#3a3833;box-shadow:none}
+  html[data-tema="kagit"] .temaBtn{box-shadow:none;background:var(--card2)}
+  html[data-tema="kagit"] textarea,html[data-tema="kagit"] input,html[data-tema="kagit"] select{border-radius:6px}
+  html[data-tema="kagit"] textarea:focus,html[data-tema="kagit"] select:focus,html[data-tema="kagit"] input:focus{box-shadow:0 0 0 2px rgba(28,28,26,.15)}
+  html[data-tema="kagit"] .tchip.on{background:#c0b29b;border-color:var(--ink)}
+  html[data-tema="kagit"] .focus-box{border-color:var(--line);background:rgba(28,28,26,.04)}
+  html[data-tema="kagit"] .subblock{background:rgba(28,28,26,.025)}
+  html[data-tema="kagit"] .stat{background:transparent}
+  html[data-tema="kagit"] .stat.b1,html[data-tema="kagit"] .stat.bx,html[data-tema="kagit"] .stat.b2,html[data-tema="kagit"] .stat.bg{border-color:var(--line)}
+  html[data-tema="kagit"] .row{border-bottom-color:rgba(28,28,26,.12)}
+  html[data-tema="kagit"] .row:hover{background:rgba(28,28,26,.06)}
+  html[data-tema="kagit"] .row.fut{background:rgba(28,28,26,.07)}
+  html[data-tema="kagit"] .row.hit{box-shadow:inset 0 0 0 1px rgba(53,97,74,.45)}
+  html[data-tema="kagit"] .roundhead{background:#cec3b1}
+  html[data-tema="kagit"] .sc{background:#dcd4c7}
+  html[data-tema="kagit"] .dlt.hi,html[data-tema="kagit"] .gs .v.hi{color:#d6cdbd;background:var(--ink)}
+  html[data-tema="kagit"] .grp .gno{color:#d6cdbd}
+  html[data-tema="kagit"] .grp0{--grc:#1c1c1a;--grbg:rgba(28,28,26,.04)}
+  html[data-tema="kagit"] .grp1{--grc:#35614a;--grbg:rgba(53,97,74,.06)}
+  html[data-tema="kagit"] .grp2{--grc:#7d5a17;--grbg:rgba(125,90,23,.06)}
+  html[data-tema="kagit"] .grp3{--grc:#8c3a31;--grbg:rgba(140,58,49,.06)}
+  html[data-tema="kagit"] .grp4{--grc:#34536e;--grbg:rgba(52,83,110,.06)}
+  html[data-tema="kagit"] .grp5{--grc:#5e3d6b;--grbg:rgba(94,61,107,.06)}
+  html[data-tema="kagit"] .grp6{--grc:#2f5f5c;--grbg:rgba(47,95,92,.06)}
+  html[data-tema="kagit"] .grp7{--grc:#696153;--grbg:rgba(105,97,83,.06)}
   html[data-tema="acik"] .dlt.hi{color:#fff}
   html[data-tema="acik"] .row.hit{box-shadow:inset 0 0 0 1px rgba(21,128,61,.4)}
   .temaBtn{position:fixed;top:14px;right:14px;z-index:9999;width:40px;height:40px;border-radius:50%;
@@ -187,7 +232,7 @@
 </style>
 </head>
 <body>
-<button class="temaBtn" id="temaBtn" onclick="temaDegis()" title="Açık / koyu tema">🌙</button>
+<button class="temaBtn" id="temaBtn" onclick="temaDegis()" title="Tema">◐</button>
 <div class="wrap">
 
   <header>
@@ -377,17 +422,21 @@
 </div>
 
 <script>
+const TEMALAR = { kagit:'E-kağıt', koyu:'Koyu', acik:'Açık' };
 function temaUygula(t){
+    if(!TEMALAR[t]) t='kagit';
     document.documentElement.setAttribute('data-tema', t);
+    const sira=Object.keys(TEMALAR), sonraki=sira[(sira.indexOf(t)+1)%sira.length];
     const b=document.getElementById('temaBtn');
-    if(b) b.textContent = (t==='acik' ? '🌙' : '☀️');
+    if(b){ b.textContent='◐'; b.title=`Tema: ${TEMALAR[t]} → ${TEMALAR[sonraki]}`; }
 }
 function temaDegis(){
-    const yeni = document.documentElement.getAttribute('data-tema')==='acik' ? 'koyu' : 'acik';
-    localStorage.setItem('enfTema', yeni);
+    const sira=Object.keys(TEMALAR), simdi=document.documentElement.getAttribute('data-tema');
+    const yeni=sira[(sira.indexOf(simdi)+1)%sira.length];
+    try{ localStorage.setItem('enfTema2', yeni); }catch(e){}
     temaUygula(yeni);
 }
-temaUygula(localStorage.getItem('enfTema') || 'koyu');
+temaUygula((()=>{ try{ return localStorage.getItem('enfTema2') || 'kagit'; }catch(e){ return 'kagit'; } })());
 
 let allMatches = [];
 let teamSet = new Set();
